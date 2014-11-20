@@ -38,11 +38,10 @@ var GameCoreModule = (function() {
     player.localLeft = this.left.clone();
     player.localLeft.rotateY(player.rotation[1]);
     player.localLeft.scale(this.moveSpeed*tpf);
-  }
+  };
 
   GameCore.prototype.setLocalMove = function(player, tpf) {
     player.localMove = this.forward.clone();
-    console.log('Y rotation', player.rotation[1]);
     player.localMove.rotateY(player.rotation[1]);
     player.localMove.scale(this.moveSpeed*tpf);
   };
@@ -51,7 +50,7 @@ var GameCoreModule = (function() {
     player.localAim = this.forward.clone();
     player.localAim.rotateX(player.rotation[0]);
     player.localAim.rotateY(player.rotation[1]);
-  }
+  };
 
   GameCore.prototype.updatePlayer = function(player, tpf) {
     player.rotation[0] = player.mouseState[1]*this.turnSpeed;
@@ -59,7 +58,6 @@ var GameCoreModule = (function() {
     this.setLocalMove(player, tpf);
     this.setLocalLeft(player, tpf);
     this.setLocalAim(player, tpf);
-    console.log(player.position.x, player.position.y, player.position.z);
     if (player.moveState.fwd === true) {
       player.position.add(player.localMove);
     }
@@ -81,14 +79,15 @@ var GameCoreModule = (function() {
     target_id = -1;
     shooter = players[shooter_id];
     r = this.hitRadius;
-    d = new Vector3(players[shooter_id].localAim);
+    d = players[shooter_id].localAim.clone();
     d.normalize();
-    e = new Vector3(players[shooter_id].position);
+    console.log('d', d);
+    e = players[shooter_id].position.clone();
     e.add(new Vector3([0, this.aimHeight, 0]));
     A = Vector3.dot(d, d);
     Object.keys(players).forEach(function(v) {
       if (v != shooter_id) {
-        c = new Vector3(players[v].position);
+        c = players[v].position.clone();
         emc = Vector3.sub(e, c);
         B = Vector3.dot(Vector3.scale(d, 2), emc);
         C = Vector3.dot(emc, emc) - r*r;
@@ -100,6 +99,7 @@ var GameCoreModule = (function() {
           t = (t1 < t2) ? t1 : t2;
           if (t > 0) {
             point = Vector3.add(e, (Vector3.scale(d, t))).toArray();
+            console.log('Hit', v);
             target_id = v;
           }
         }
