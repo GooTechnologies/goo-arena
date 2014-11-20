@@ -3,8 +3,8 @@ var GameCoreModule = (function() {
   function GameCore() {
     this.moveSpeed = 50;
     this.turnSpeed = -0.001;
-    this.forward = [0, 0, -1];
-    this.left = [-1, 0, 0];
+    this.forward = new Vector3([0, 0, -1]);
+    this.left = new Vector3([-1, 0, 0]);
     this.hitRadius = 1;
     this.spawnLimit = 30;
     this.aimHeight = 2;
@@ -14,12 +14,14 @@ var GameCoreModule = (function() {
     return {
       id: id,
       status: 'not_ready',
-      localForward: this.forward.slice(),
-      localAim: this.forward.slice(),
-      localLeft: this.left.slice(),
-      position: [this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit), 
-                 0, 
-                 this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit)],
+      localMove: this.forward.clone(),
+      localAim: this.forward.clone(),
+      localLeft: this.left.clone(),
+      position: new Vector3(
+        [this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit), 
+        0, 
+        this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit)]
+      ),
       rotation: [0, 0],
       moveState: {
         fwd: false,
@@ -32,55 +34,43 @@ var GameCoreModule = (function() {
     }
   };
 
-  GameCore.prototype.rotateVectorY = function(v, angle) {
-    var x = v[0];
-    var z = v[2];
-    v[0] = x*Math.cos(angle) + z*Math.sin(angle);
-    v[2] = -x*Math.sin(angle) + z*Math.cos(angle);
-  };
-
-  GameCore.prototype.rotateVectorX = function(v, angle) {
-    var y = v[1];
-    var z = v[2];
-    v[1] = y*Math.cos(angle) - z*Math.sin(angle);
-    v[2] = y*Math.sin(angle) + z*Math.cos(angle);
-  };
-
   GameCore.prototype.setLocalLeft = function (player, tpf) {
-    player.localLeft = this.left.slice();
-    this.rotateVectorY(player.localLeft, player.rotation[1]);
-    this.scaleVector(player.localLeft, this.moveSpeed*tpf);
+    player.localLeft = this.left.clone();
+    player.localLeft.rotateY(player.rotation[1]);
+    player.localLeft.scale(this.moveSpeed*tpf);
   }
 
-  GameCore.prototype.setLocalForward = function(player, tpf) {
-    player.localForward = this.forward.slice();
-    this.rotateVectorY(player.localForward, player.rotation[1]);
-    this.scaleVector(player.localForward, this.moveSpeed*tpf);
+  GameCore.prototype.setLocalMove = function(player, tpf) {
+    player.localMove = this.forward.clone();
+    console.log('Y rotation', player.rotation[1]);
+    player.localMove.rotateY(player.rotation[1]);
+    player.localMove.scale(this.moveSpeed*tpf);
   };
 
   GameCore.prototype.setLocalAim = function(player, tpf) {
-    player.localAim = this.forward.slice();
-    this.rotateVectorX(player.localAim, player.rotation[0]);
-    this.rotateVectorY(player.localAim, player.rotation[1]);
-  };
+    player.localAim = this.forward.clone();
+    player.localAim.rotateX(player.rotation[0]);
+    player.localAim.rotateY(player.rotation[1]);
+  }
 
   GameCore.prototype.updatePlayer = function(player, tpf) {
     player.rotation[0] = player.mouseState[1]*this.turnSpeed;
     player.rotation[1] = player.mouseState[0]*this.turnSpeed;
-    this.setLocalForward(player, tpf);
+    this.setLocalMove(player, tpf);
     this.setLocalLeft(player, tpf);
     this.setLocalAim(player, tpf);
+    console.log(player.position.x, player.position.y, player.position.z);
     if (player.moveState.fwd === true) {
-      this.addVector(player.position, player.localForward);
+      player.position.add(player.localMove);
     }
     if (player.moveState.bwd === true) {
-      this.subVector(player.position, player.localForward);
+      player.position.sub(player.localMove);
     }
     if (player.moveState.left === true) {
-      this.addVector(player.position, player.localLeft);
+      player.position.add(player.localLeft);
     }
     if (player.moveState.right === true) {
-      this.subVector(player.position, player.localLeft);
+      player.position.sub(player.localLeft);
     }
   };
 
@@ -91,18 +81,8 @@ var GameCoreModule = (function() {
     target_id = -1;
     shooter = players[shooter_id];
     r = this.hitRadius;
-    // Ray equation in parametric form: p(t) = e + td
-    // e - origin
-    // t - unknown
-    // d - direction
-    // A = d.d
-    // B = 2.d.(e-c)
-    // C = (e-c).(e-c) - r*r
-    
-    // TODO not only around Y
     d = new Vector3(players[shooter_id].localAim);
     d.normalize();
-    console.log('Dir', d.x, d.y, d.z);
     e = new Vector3(players[shooter_id].position);
     e.add(new Vector3([0, this.aimHeight, 0]));
     A = Vector3.dot(d, d);
@@ -126,39 +106,6 @@ var GameCoreModule = (function() {
       }
     });
     return { target_id: target_id, point: point };
-  };
-
-  GameCore.prototype.addVector = function(lhs, rhs) {
-    lhs[0] += rhs[0];
-    lhs[1] += rhs[1];
-    lhs[2] += rhs[2];
-  };
-
-  GameCore.prototype.subVector = function(lhs, rhs) {
-    lhs[0] -= rhs[0];
-    lhs[1] -= rhs[1];
-    lhs[2] -= rhs[2];
-  };
-
-  GameCore.prototype.scaleVector = function(lhs, s) {
-    lhs[0] *= s;
-    lhs[1] *= s;
-    lhs[2] *= s;
-  };
-
-  GameCore.prototype.magnitude = function(v) {
-    return Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-  };
-
-  GameCore.prototype.normalizeVector = function(v) {
-    var m = this.magnitude(v);
-    v[0] = v[0]/m;
-    v[1] = v[1]/m;
-    v[2] = v[2]/m;
-  };
-
-  GameCore.prototype.dot = function(lhs, rhs) {
-    return lhs[0]*rhs[0] + lhs[1]*rhs[1] + lhs[2]*rhs[2];
   };
 
   GameCore.prototype.getRandomInt = function(min, max) {
@@ -237,6 +184,20 @@ var GameCoreModule = (function() {
     this.y /= m;
     this.z /= m;
     return this;
+  };
+
+  Vector3.prototype.rotateY = function(angle) {
+    var x = this.x;
+    var z = this.z;
+    this.x = x*Math.cos(angle) + z*Math.sin(angle);
+    this.z = -x*Math.sin(angle) + z*Math.cos(angle);
+  };
+
+  Vector3.prototype.rotateX = function(angle) {
+    var y = this.y;
+    var z = this.z;
+    this.y = y*Math.cos(angle) - z*Math.sin(angle);
+    this.z = y*Math.sin(angle) + z*Math.cos(angle);
   };
 
   return GameCore;
