@@ -1,7 +1,7 @@
 var GameCoreModule = (function() {
 
   function GameCore() {
-    this.moveSpeed = 50;
+    this.moveSpeed = 10;
     this.turnSpeed = -0.001;
     this.forward = new Vector3([0, 0, -1]);
     this.left = new Vector3([-1, 0, 0]);
@@ -31,7 +31,7 @@ var GameCoreModule = (function() {
       },
       mouseState: [0, 0],
       hitRadius: this.hitRadius
-    }
+    };
   };
 
   GameCore.prototype.setLocalLeft = function (player, tpf) {
@@ -53,6 +53,7 @@ var GameCoreModule = (function() {
   };
 
   GameCore.prototype.updatePlayer = function(player, tpf) {
+    console.log('Update player', tpf);
     player.rotation[0] = player.mouseState[1]*this.turnSpeed;
     player.rotation[1] = player.mouseState[0]*this.turnSpeed;
     this.setLocalMove(player, tpf);
@@ -199,6 +200,8 @@ var GameCoreModule = (function() {
     this.y = y*Math.cos(angle) - z*Math.sin(angle);
     this.z = y*Math.sin(angle) + z*Math.cos(angle);
   };
+
+  GameCore.Vector3 = Vector3;
 
   return GameCore;
 

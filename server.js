@@ -19,21 +19,30 @@ console.log('Websocket server created');
 
 var sockets = {};
 var players = {};
+var handled_inputs = {};
 
 var socket_id_counter = 0;
 var num_connections = 0;
+var server_tick = 0;
+var tick_rate = 66;
+var t = new Date().getTime();
 
 var game_loop = function() {
+	server_tick++;
+
 	Object.keys(players).forEach(function(v) {
 		if (players[v].status === 'not_ready') {
 			console.log('Sending init request to', v);
-			send_to_one(v, 's_ready_to_init', players[v]);
+			send_to_one(v, 's_ready_to_init', { player: players[v], server_tick: server_tick });
 		} else if (players[v].status === 'ready') {
-			core.updatePlayer(players[v], 1/100);
+			core.updatePlayer(players[v], (new Date().getTime() - t)*0.001);
+			send_to_one(v, 's_handled_tick', server_tick);
 		}
 	});
 	send_to_all('s_players', players);
-	setTimeout(game_loop, 100);
+
+	t = new Date().getTime();
+	setTimeout(game_loop, tick_rate);
 };
 
 var update_move_state = function(socket_id, move_state) {
@@ -85,6 +94,7 @@ wss.on('connection', function(ws) {
 	socket_id = socket_id_counter++;
 	sockets[socket_id] = ws;
 	players[socket_id] = core.newPlayer(socket_id);
+	handled_inputs[socket_id] = 0;
 
 	console.log('---------------------------------------------------');
 	console.log('New connection:', socket_id);
