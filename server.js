@@ -19,36 +19,45 @@ console.log('Websocket server created');
 
 var sockets = {};
 var players = {};
-var handled_inputs = {};
+var handled_deltas = {};
+var delta_queues = {};
 
 var socket_id_counter = 0;
 var num_connections = 0;
-var server_tick = 0;
+var server_time = 0;
 var tick_rate = 66;
-var t = new Date().getTime();
+var t1 = new Date().getTime();
+var t2 = new Date().getTime();
 
 var game_loop = function() {
-	server_tick++;
+	t2 = new Date().getTime();
 
 	Object.keys(players).forEach(function(v) {
 		if (players[v].status === 'not_ready') {
 			console.log('Sending init request to', v);
-			send_to_one(v, 's_ready_to_init', { player: players[v], server_tick: server_tick });
+			send_to_one(v, 's_ready_to_init', { player: players[v], server_time: server_time });
 		} else if (players[v].status === 'ready') {
-			core.updatePlayer(players[v], (new Date().getTime() - t)*0.001);
-			send_to_one(v, 's_handled_tick', server_tick);
+			var last = apply_delta_queue(v);
+			// TODO validate deltas
+			send_to_one(v, 's_handled_deltas', handled_deltas[v]);
 		}
 	});
 	send_to_all('s_players', players);
 
-	t = new Date().getTime();
+	t1 = new Date().getTime();
 	setTimeout(game_loop, tick_rate);
 };
 
-var update_move_state = function(socket_id, move_state) {
-	if (players[socket_id].status !== 'ready') return;
-	console.log('Updating move state', move_state);
-	players[socket_id].moveState = move_state;
+var handle_delta = function(socket_id, delta) {
+	delta_queues[socket_id].push(delta);
+};
+
+var apply_delta_queue = function(socket_id) {
+	delta_queues[socket_id].forEach(function(v) {
+		core.applyDelta(players[socket_id], v);
+		handled_deltas[socket_id]++;
+	});
+	delta_queues[socket_id] = [];
 };
 
 var update_mouse_state = function(socket_id, mouse_state) {
@@ -72,11 +81,15 @@ var handle_message = function(socket_id, message, data, seq) {
 			console.log('Player', socket_id, 'is ready to roll');
 			players[socket_id].status = 'ready';
 			break;
+		case 'c_delta':
+			handle_delta(socket_id, data);
+			break;
 		case 'c_key_state':
-			update_move_state(socket_id, data);
+			//update_move_state(socket_id, data);
+			//handled_inputs[socket_id]++;
 			break;
 		case 'c_mouse_state':
-			update_mouse_state(socket_id, data);
+			//update_mouse_state(socket_id, data);
 			break;
 		case 'c_fire':
 			fire(socket_id);
@@ -94,7 +107,8 @@ wss.on('connection', function(ws) {
 	socket_id = socket_id_counter++;
 	sockets[socket_id] = ws;
 	players[socket_id] = core.newPlayer(socket_id);
-	handled_inputs[socket_id] = 0;
+	handled_deltas[socket_id] = 0;
+	delta_queues[socket_id] = [];
 
 	console.log('---------------------------------------------------');
 	console.log('New connection:', socket_id);

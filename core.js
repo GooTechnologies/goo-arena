@@ -34,6 +34,13 @@ var GameCoreModule = (function() {
     };
   };
 
+  GameCore.prototype.applyDelta = function(player, delta) {
+    console.log('Delta change from', player, delta);
+    player.position.x += delta[0];
+    player.position.y += delta[1];
+    player.position.z += delta[2];
+  };
+
   GameCore.prototype.setLocalLeft = function (player, tpf) {
     player.localLeft = this.left.clone();
     player.localLeft.rotateY(player.rotation[1]);
@@ -53,7 +60,6 @@ var GameCoreModule = (function() {
   };
 
   GameCore.prototype.updatePlayer = function(player, tpf) {
-    console.log('Update player', tpf);
     player.rotation[0] = player.mouseState[1]*this.turnSpeed;
     player.rotation[1] = player.mouseState[0]*this.turnSpeed;
     this.setLocalMove(player, tpf);
