@@ -22,6 +22,9 @@ var players = {};
 var handled_deltas = {};
 var delta_queues = {};
 
+var hits = [];
+var kills = [];
+
 var socket_id_counter = 0;
 var num_connections = 0;
 var server_time = 0;
@@ -36,13 +39,15 @@ var game_loop = function() {
 		if (players[v].status === 'not_ready') {
 			console.log('Sending init request to', v);
 			send_to_one(v, 's_ready_to_init', { player: players[v], server_time: server_time });
-		} else if (players[v].status === 'ready') {
+		} else if (players[v].status === 'ready' && players[v].health > 0) {
 			var last = apply_delta_queue(v);
 			// TODO validate deltas
 			send_to_one(v, 's_handled_deltas', handled_deltas[v]);
 		}
 	});
-	send_to_all('s_players', players);
+	send_to_all('s_players', { players: players, hits: hits, kills: kills });
+	kills = [];
+	hits = [];
 
 	t1 = new Date().getTime();
 	setTimeout(game_loop, tick_rate);
@@ -65,11 +70,16 @@ var update_mouse_state = function(socket_id, mouse_state) {
 	players[socket_id].mouseState = mouse_state;
 };
 
-var fire = function(socket_id) {
+var fire = function(socket_id, source, direction) {
 	var hit_target = null;
 	var impact_point = null;
-	var hit_data = core.fire(players, socket_id);
+	var hit_data = core.fire(players, socket_id, source, direction);
 	if (hit_data.target_id > -1) {
+		hits.push({shooter: socket_id, victim: hit_data.target_id, point: hit_data.point});
+		if (players[hit_data.target_id].health === 0) {
+			kills.push({shooter: socket_id, victim: hit_data.target_id});	
+			players[hit_data.target_id].health = -1;
+		}
 		send_to_one(socket_id, 's_hit_target', hit_data );
 	}
 };
@@ -92,7 +102,7 @@ var handle_message = function(socket_id, message, data, seq) {
 			//update_mouse_state(socket_id, data);
 			break;
 		case 'c_fire':
-			fire(socket_id);
+			fire(socket_id, data.source, data.direction);
 			break;
 		default:
 			console.error('Unknown message:', message);

@@ -6,8 +6,9 @@ var GameCoreModule = (function() {
     this.forward = new Vector3([0, 0, -1]);
     this.left = new Vector3([-1, 0, 0]);
     this.hitRadius = 1;
-    this.spawnLimit = 30;
+    this.spawnLimit = 15;
     this.aimHeight = 2;
+	this.startHealth = 20;
   };
 
   GameCore.prototype.newPlayer = function(id) {
@@ -30,12 +31,12 @@ var GameCoreModule = (function() {
         right: false
       },
       mouseState: [0, 0],
-      hitRadius: this.hitRadius
+      hitRadius: this.hitRadius,
+	  health: this.startHealth
     };
   };
 
   GameCore.prototype.applyDelta = function(player, delta) {
-    console.log('Delta change from', player, delta);
     player.position.x += delta[0];
     player.position.y += delta[1];
     player.position.z += delta[2];
@@ -79,17 +80,17 @@ var GameCoreModule = (function() {
     }
   };
 
-  GameCore.prototype.fire = function(players, shooter_id) {
+  GameCore.prototype.fire = function(players, shooter_id, source, direction) {
     var shooter, r, e, t, d, c, A, B, C, emc, discSq, disc, t, t1, t2, target, point;
-    console.log('Fire');
+    console.log('Fire', source, direction);
     point = [0, 0, 0];
     target_id = -1;
     shooter = players[shooter_id];
     r = this.hitRadius;
-    d = players[shooter_id].localAim.clone();
+	d = new Vector3(direction);
     d.normalize();
     console.log('d', d);
-    e = players[shooter_id].position.clone();
+	e = new Vector3(source);
     e.add(new Vector3([0, this.aimHeight, 0]));
     A = Vector3.dot(d, d);
     Object.keys(players).forEach(function(v) {
@@ -112,6 +113,11 @@ var GameCoreModule = (function() {
         }
       }
     });
+	if (target_id !== -1 && players[target_id].health > 0) {
+		players[target_id].health--;
+	} else {
+		target_id = -1;
+	}
     return { target_id: target_id, point: point };
   };
 
