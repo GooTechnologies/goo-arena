@@ -33,23 +33,26 @@ var t1 = new Date().getTime();
 var t2 = new Date().getTime();
 
 var game_loop = function() {
-	t2 = new Date().getTime();
 
 	Object.keys(players).forEach(function(v) {
 		if (players[v].status === 'not_ready') {
 			console.log('Sending init request to', v);
-			send_to_one(v, 's_ready_to_init', { player: players[v], server_time: server_time });
+			send_to_one(v, 's_ready_to_init', { player: players[v] });
 		} else if (players[v].status === 'ready' && players[v].health > 0) {
 			var last = apply_delta_queue(v);
 			// TODO validate deltas
 			send_to_one(v, 's_handled_deltas', handled_deltas[v]);
 		}
 	});
-	send_to_all('s_players', { players: players, hits: hits, kills: kills });
+	send_to_all('s_players', { 
+		players: players, 
+		hits: hits,
+		kills: kills,
+		server_time: new Date().getTime()
+	 });
 	kills = [];
 	hits = [];
 
-	t1 = new Date().getTime();
 	setTimeout(game_loop, tick_rate);
 };
 
@@ -93,10 +96,6 @@ var handle_message = function(socket_id, message, data, seq) {
 			break;
 		case 'c_delta':
 			handle_delta(socket_id, data);
-			break;
-		case 'c_key_state':
-			//update_move_state(socket_id, data);
-			//handled_inputs[socket_id]++;
 			break;
 		case 'c_mouse_state':
 			//update_mouse_state(socket_id, data);
