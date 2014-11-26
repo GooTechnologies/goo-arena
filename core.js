@@ -2,7 +2,7 @@ var GameCoreModule = (function() {
 
   // The core constants. The ultimate truth.
   function GameCore() {
-    this.moveSpeed = 10;
+    this.moveSpeed = 5;
     this.turnSpeed = -0.001;
     this.forward = new Vector3([0, 0, -1]);
     this.left = new Vector3([-1, 0, 0]);
@@ -46,6 +46,7 @@ var GameCoreModule = (function() {
     player.position.z += delta[2];
   };
 
+  // Do the hit interpolation and calculations
   GameCore.prototype.fire = function(players, state_old, state_older, update_time, average_tick_rate, socket_id, source, direction) {
     var r, e, t, d, c, A, B, C, emc, discSq, disc, t, t1, t2, target, point, interpolatedPlayers;
 
@@ -62,7 +63,7 @@ var GameCoreModule = (function() {
     e.add(new Vector3([0, this.aimHeight, 0]));
     A = Vector3.dot(d, d);
 
-    // Check against all (interpolated) player positions
+    // Check against all (interpolated) player positions and hit sphere
     Object.keys(interpolatedPlayers).forEach(function(v) {
       if (v != socket_id) {
         c = interpolatedPlayers[v].position.clone();
@@ -128,6 +129,8 @@ var GameCoreModule = (function() {
   };
 
   GameCore.prototype.interpolatePlayer = function(playerOld, playerOlder, t) {
+    console.log('Interpolating between', playerOlder.position.x, playerOld.position.x, t);
+    console.log('Result', this.lerp(playerOlder.position.x, playerOld.position.x, t));
     return {
       position: new Vector3([
         this.lerp(playerOlder.position.x, playerOld.position.x, t),
