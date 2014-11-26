@@ -15,7 +15,7 @@ server.listen(port);
 console.log('Listening on port', port);
 
 var wss = new WebSocketServer({server: server});
-console.log('Websocket server created');
+console.log('Server created')
 
 var sockets = {};
 var players = {};
