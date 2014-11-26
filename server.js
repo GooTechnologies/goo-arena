@@ -22,9 +22,8 @@ var sockets = {};
 // Real time players
 var players = {};
 
-// Containing interpolation information for the two last known update moments
+// Keep track of last state
 var state_old = {};
-var state_older = {};
 
 // Keep track of average tick length for interpolation when shot is fired
 var recent_ticks = [tick_rate, tick_rate, tick_rate, tick_rate, tick_rate];
@@ -42,8 +41,9 @@ var server_time = 0;
 var tick_rate = 50;
 var update_time = new Date().getTime();
 
-var latencies = {};
 var pings = {};
+var ping_rate = 1000;
+var ping_time = new Date().getTime();
 
 // The mighty game loop
 var game_loop = function() {
@@ -59,9 +59,7 @@ var game_loop = function() {
 			pings[v] = new Date().getTime();
 			send_to_one(v, 's_ready_to_init', { player: players[v] });
 		} else if (players[v].status === 'ready' && players[v].health > 0) {
-			var last = apply_delta_queue(v);
-			// TODO validate deltas
-			send_to_one(v, 's_handled_deltas', handled_deltas[v]);
+			apply_delta_queue(v);
 		}
 	});
 	send_to_all('s_players', { 
@@ -72,6 +70,11 @@ var game_loop = function() {
 	 });
 	kills = [];
 	hits = [];
+
+	if (new Date().getTime() - ping_time > ping_rate) {
+		ping_time = new Date().getTime();
+		send_to_all('s_ping');
+	}
 
 	calculate_average_tick_length(new Date().getTime() - update_time);
 	update_time = new Date().getTime();
@@ -119,8 +122,9 @@ var apply_delta_queue = function(socket_id) {
 
 // A user has fired. See if someone got hit, using positions from the past.
 var fire = function(socket_id, source, direction) {
+
 	// TODO validate shooter position
-	var hit_data = core.fire(players, state_old, state_older, update_time, average_tick_rate, socket_id, source, direction);
+	var hit_data = core.fire(players, state_old, update_time, average_tick_rate, players[socket_id].latency, socket_id, source, direction);
 	if (hit_data.target_id > -1) {
 		hits.push({shooter: socket_id, victim: hit_data.target_id, point: hit_data.point});
 		if (players[hit_data.target_id].health === 0) {
@@ -134,9 +138,12 @@ var fire = function(socket_id, source, direction) {
 var handle_message = function(socket_id, message, data, seq) {
 	
 	switch (message) {
+		case 'c_pong':
+			console.log('pong', (new Date().getTime() - ping_time)/2);
+			players[socket_id].latency = (new Date().getTime() - ping_time)/2;
+			break;
 		case 'c_initialized':
-			if (!latencies[socket_id]) latencies[socket_id] = (new Date().getTime() - pings[socket_id])/2;
-			console.log('Player', socket_id, 'is ready to roll, latency', latencies[socket_id]);
+			if (!players[socket_id].latency) players[socket_id].latency = (new Date().getTime() - pings[socket_id])/2;
 			players[socket_id].status = 'ready';
 			break;
 		case 'c_delta':

@@ -9,7 +9,7 @@ var GameCoreModule = (function() {
     this.hitRadius = 1;
     this.spawnLimit = 15;
     this.aimHeight = 2;
-    this.startHealth = 20;
+    this.startHealth = 2000;
   };
 
   GameCore.prototype.newPlayer = function(id) {
@@ -29,6 +29,7 @@ var GameCoreModule = (function() {
         left: false,
         right: false
       },
+      latency: null,
       mouseState: [0, 0],
       hitRadius: this.hitRadius,
       health: this.startHealth,
@@ -47,10 +48,16 @@ var GameCoreModule = (function() {
   };
 
   // Do the hit interpolation and calculations
-  GameCore.prototype.fire = function(players, state_old, state_older, update_time, average_tick_rate, socket_id, source, direction) {
+  GameCore.prototype.fire = function(players, state_old, update_time, average_tick_rate, latency, socket_id, source, direction) {
     var r, e, t, d, c, A, B, C, emc, discSq, disc, t, t1, t2, target, point, interpolatedPlayers;
+    interpolatedPlayers = this.interpolatePlayers(players, state_old, update_time, average_tick_rate, latency);
 
-    interpolatedPlayers = this.interpolatePlayers(players, state_old, state_older, update_time, average_tick_rate);
+    console.log('Fire!');
+    console.log('I am at', source);
+    console.log('My interpolated opponents');
+    Object.keys(interpolatedPlayers).forEach(function(v) {
+      console.log(v, interpolatedPlayers[v].position);
+    });
 
     // Hit data to return
     point = null;
@@ -114,13 +121,14 @@ var GameCoreModule = (function() {
     }
   };
 
-  GameCore.prototype.interpolatePlayers = function(players, state_old, state_older, update_time, average_tick_rate) {
+  GameCore.prototype.interpolatePlayers = function(players, state_old, update_time, average_tick_rate, latency) {
     var that = this;
-    var t = (new Date().getTime()-update_time)/average_tick_rate;
+    var t = (new Date().getTime()-update_time-latency)/average_tick_rate;
+    console.log('t', t);
     var interpolatedPlayers = {};
     Object.keys(players).forEach(function(v) {
-      if (state_old[v] && state_older[v]) {
-        interpolatedPlayers[v] = that.interpolatePlayer(state_old[v], state_older[v], t);
+      if (state_old[v]) {
+        interpolatedPlayers[v] = that.interpolatePlayer(players[v], state_old[v], t);
       } else {
         interpolatedPlayers[v] = that.copyForInterpolation(players[v]);
       }
@@ -129,8 +137,6 @@ var GameCoreModule = (function() {
   };
 
   GameCore.prototype.interpolatePlayer = function(playerOld, playerOlder, t) {
-    console.log('Interpolating between', playerOlder.position.x, playerOld.position.x, t);
-    console.log('Result', this.lerp(playerOlder.position.x, playerOld.position.x, t));
     return {
       position: new Vector3([
         this.lerp(playerOlder.position.x, playerOld.position.x, t),
