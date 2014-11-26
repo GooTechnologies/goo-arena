@@ -1,5 +1,6 @@
 var GameCoreModule = (function() {
 
+  // The core constants. The ultimate truth.
   function GameCore() {
     this.moveSpeed = 10;
     this.turnSpeed = -0.001;
@@ -8,21 +9,19 @@ var GameCoreModule = (function() {
     this.hitRadius = 1;
     this.spawnLimit = 15;
     this.aimHeight = 2;
-	this.startHealth = 20;
+    this.startHealth = 20;
   };
 
   GameCore.prototype.newPlayer = function(id) {
     return {
       id: id,
+      name: 'Goon #' + this.getRandomInt(1, 999),
       status: 'not_ready',
       localMove: this.forward.clone(),
       localAim: this.forward.clone(),
       localLeft: this.left.clone(),
-      position: new Vector3(
-        [this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit), 
-        0, 
-        this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit)]
-      ),
+      position: new Vector3([this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit), 
+        0, this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit)]),
       rotation: [0, 0],
       moveState: {
         fwd: false,
@@ -32,70 +31,41 @@ var GameCoreModule = (function() {
       },
       mouseState: [0, 0],
       hitRadius: this.hitRadius,
-	  health: this.startHealth
+      health: this.startHealth,
+      color: [this.getRandomArbitrary(0, 1),
+        this.getRandomArbitrary(0, 1), this.getRandomArbitrary(0, 1)]
     };
   };
 
+
+
   GameCore.prototype.applyDelta = function(player, delta) {
+    // TODO validate deltas against max speed and rate
     player.position.x += delta[0];
     player.position.y += delta[1];
     player.position.z += delta[2];
   };
 
-  GameCore.prototype.setLocalLeft = function (player, tpf) {
-    player.localLeft = this.left.clone();
-    player.localLeft.rotateY(player.rotation[1]);
-    player.localLeft.scale(this.moveSpeed*tpf);
-  };
+  GameCore.prototype.fire = function(players, state_old, state_older, update_time, average_tick_rate, socket_id, source, direction) {
+    var r, e, t, d, c, A, B, C, emc, discSq, disc, t, t1, t2, target, point, interpolatedPlayers;
 
-  GameCore.prototype.setLocalMove = function(player, tpf) {
-    player.localMove = this.forward.clone();
-    player.localMove.rotateY(player.rotation[1]);
-    player.localMove.scale(this.moveSpeed*tpf);
-  };
+    interpolatedPlayers = this.interpolatePlayers(players, state_old, state_older, update_time, average_tick_rate);
 
-  GameCore.prototype.setLocalAim = function(player, tpf) {
-    player.localAim = this.forward.clone();
-    player.localAim.rotateX(player.rotation[0]);
-    player.localAim.rotateY(player.rotation[1]);
-  };
-
-  GameCore.prototype.updatePlayer = function(player, tpf) {
-    player.rotation[0] = player.mouseState[1]*this.turnSpeed;
-    player.rotation[1] = player.mouseState[0]*this.turnSpeed;
-    this.setLocalMove(player, tpf);
-    this.setLocalLeft(player, tpf);
-    this.setLocalAim(player, tpf);
-    if (player.moveState.fwd === true) {
-      player.position.add(player.localMove);
-    }
-    if (player.moveState.bwd === true) {
-      player.position.sub(player.localMove);
-    }
-    if (player.moveState.left === true) {
-      player.position.add(player.localLeft);
-    }
-    if (player.moveState.right === true) {
-      player.position.sub(player.localLeft);
-    }
-  };
-
-  GameCore.prototype.fire = function(players, shooter_id, source, direction) {
-    var shooter, r, e, t, d, c, A, B, C, emc, discSq, disc, t, t1, t2, target, point;
-    console.log('Fire', source, direction);
-    point = [0, 0, 0];
+    // Hit data to return
+    point = null;
     target_id = -1;
-    shooter = players[shooter_id];
+
     r = this.hitRadius;
-	d = new Vector3(direction);
+    d = new Vector3(direction);
     d.normalize();
-    console.log('d', d);
-	e = new Vector3(source);
+    e = new Vector3(source);
     e.add(new Vector3([0, this.aimHeight, 0]));
     A = Vector3.dot(d, d);
-    Object.keys(players).forEach(function(v) {
-      if (v != shooter_id) {
-        c = players[v].position.clone();
+
+    // Check against all (interpolated) player positions
+    Object.keys(interpolatedPlayers).forEach(function(v) {
+      if (v != socket_id) {
+        c = interpolatedPlayers[v].position.clone();
         emc = Vector3.sub(e, c);
         B = Vector3.dot(Vector3.scale(d, 2), emc);
         C = Vector3.dot(emc, emc) - r*r;
@@ -113,13 +83,17 @@ var GameCoreModule = (function() {
         }
       }
     });
-	if (target_id !== -1 && players[target_id].health > 0) {
-		players[target_id].health--;
-	} else {
-		target_id = -1;
-	}
+
+    // Did we hit anything? If we did, remove some health on target
+  	if (target_id !== -1 && players[target_id].health > 0) {
+  		players[target_id].health--;
+  	} 
+
+    // Send back the hit data
     return { target_id: target_id, point: point };
   };
+
+  // == Random  ===========================================================
 
   GameCore.prototype.getRandomInt = function(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -129,7 +103,49 @@ var GameCoreModule = (function() {
     return Math.random() * (max - min) + min;
   };
 
-  // =====================================================================
+  // == Interpolation  ====================================================
+
+  // Copy what's needed for interpolation
+  GameCore.prototype.copyForInterpolation = function(player) {
+    return {
+      position: player.position.clone(),
+      rotation: player.rotation.slice()
+    }
+  };
+
+  GameCore.prototype.interpolatePlayers = function(players, state_old, state_older, update_time, average_tick_rate) {
+    var that = this;
+    var t = (new Date().getTime()-update_time)/average_tick_rate;
+    var interpolatedPlayers = {};
+    Object.keys(players).forEach(function(v) {
+      if (state_old[v] && state_older[v]) {
+        interpolatedPlayers[v] = that.interpolatePlayer(state_old[v], state_older[v], t);
+      } else {
+        interpolatedPlayers[v] = that.copyForInterpolation(players[v]);
+      }
+    });
+    return interpolatedPlayers;
+  };
+
+  GameCore.prototype.interpolatePlayer = function(playerOld, playerOlder, t) {
+    return {
+      position: new Vector3([
+        this.lerp(playerOlder.position.x, playerOld.position.x, t),
+        this.lerp(playerOlder.position.y, playerOld.position.y, t),
+        this.lerp(playerOlder.position.z, playerOld.position.z, t),
+      ]),
+      rotation: [
+        this.lerp(playerOlder.rotation[0], playerOlder.rotation[1], t),
+        this.lerp(playerOlder.rotation[1], playerOlder.rotation[1], t)
+      ]
+    };
+  };
+
+  // == Vector3 ==========================================================
+
+  GameCore.prototype.lerp = function(a, b, t) {
+    return a*(1-t) + b*t;
+  };
 
   function Vector3(v) {
     this.x = (v !== undefined && v[0] !== NaN) ? v[0] : 0;
@@ -199,21 +215,7 @@ var GameCoreModule = (function() {
     return this;
   };
 
-  Vector3.prototype.rotateY = function(angle) {
-    var x = this.x;
-    var z = this.z;
-    this.x = x*Math.cos(angle) + z*Math.sin(angle);
-    this.z = -x*Math.sin(angle) + z*Math.cos(angle);
-  };
-
-  Vector3.prototype.rotateX = function(angle) {
-    var y = this.y;
-    var z = this.z;
-    this.y = y*Math.cos(angle) - z*Math.sin(angle);
-    this.z = y*Math.sin(angle) + z*Math.cos(angle);
-  };
-
-  GameCore.Vector3 = Vector3;
+  // =====================================================================
 
   return GameCore;
 

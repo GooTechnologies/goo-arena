@@ -18,7 +18,18 @@ var wss = new WebSocketServer({server: server});
 console.log('Server created')
 
 var sockets = {};
+
+// Real time players
 var players = {};
+
+// Containing interpolation information for the two last known update moments
+var state_old= {};
+var state_older = {};
+
+// Keep track of average tick length for interpolation when shot is fired
+var recent_ticks = [tick_rate, tick_rate, tick_rate, tick_rate, tick_rate];
+var average_tick_rate = tick_rate;
+
 var handled_deltas = {};
 var delta_queues = {};
 
@@ -28,10 +39,10 @@ var kills = [];
 var socket_id_counter = 0;
 var num_connections = 0;
 var server_time = 0;
-var tick_rate = 66;
-var t1 = new Date().getTime();
-var t2 = new Date().getTime();
+var tick_rate = 1000;
+var update_time = new Date().getTime();
 
+// The mighty game loop
 var game_loop = function() {
 
 	Object.keys(players).forEach(function(v) {
@@ -53,13 +64,43 @@ var game_loop = function() {
 	kills = [];
 	hits = [];
 
+	update_interpolation_state();
+
+	calculate_average_tick_length(new Date().getTime() - update_time);
+	update_time = new Date().getTime();
+	
 	setTimeout(game_loop, tick_rate);
 };
 
+
+var calculate_average_tick_length = function(last_tick_length) {
+	recent_ticks.shift();
+	recent_ticks.push(last_tick_length);
+	average_tick_rate = 0;
+	recent_ticks.forEach(function(v) {
+		average_tick_rate += v;
+	});
+	average_tick_rate /= recent_ticks.length;
+};
+
+// Update interpolation states old and older
+var update_interpolation_state = function() {
+	state_older = {};
+	Object.keys(state_old).forEach(function(v) {
+		state_older[v] = core.copyForInterpolation(state_old[v]);
+	});
+	state_old = {};
+	Object.keys(players).forEach(function(v) {
+		state_old[v] = core.copyForInterpolation(players[v]);
+	});
+};
+
+// Push a delta to the queue for processing next update iteration
 var handle_delta = function(socket_id, delta) {
 	delta_queues[socket_id].push(delta);
 };
 
+// Apply a queue of deltas, reset the queue afterwards
 var apply_delta_queue = function(socket_id) {
 	delta_queues[socket_id].forEach(function(v) {
 		core.applyDelta(players[socket_id], v);
@@ -74,9 +115,7 @@ var update_mouse_state = function(socket_id, mouse_state) {
 };
 
 var fire = function(socket_id, source, direction) {
-	var hit_target = null;
-	var impact_point = null;
-	var hit_data = core.fire(players, socket_id, source, direction);
+	var hit_data = core.fire(players, state_old, state_older, update_time, average_tick_rate, socket_id, source, direction);
 	if (hit_data.target_id > -1) {
 		hits.push({shooter: socket_id, victim: hit_data.target_id, point: hit_data.point});
 		if (players[hit_data.target_id].health === 0) {
@@ -96,9 +135,6 @@ var handle_message = function(socket_id, message, data, seq) {
 			break;
 		case 'c_delta':
 			handle_delta(socket_id, data);
-			break;
-		case 'c_mouse_state':
-			//update_mouse_state(socket_id, data);
 			break;
 		case 'c_fire':
 			fire(socket_id, data.source, data.direction);
@@ -158,16 +194,19 @@ wss.on('connection', function(ws) {
 
 });
 
+// Send a message to a specific player
 var send_to_one = function(socket_id, message, data) {
 	if (sockets[socket_id] && sockets[socket_id].readyState === 1) {
 		sockets[socket_id].send(JSON.stringify({message: message, data: data}));
 	}
 };
 
+// Send a message to all players
 var send_to_all = function(message, data) {
 	Object.keys(sockets).forEach(function(v) {
 		send_to_one(v, message, data);
 	});	
 };
 
+console.log('Starting game loop');
 game_loop();
