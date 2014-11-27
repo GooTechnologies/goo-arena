@@ -4,8 +4,9 @@ var express = require('express')
 var app = express()
 var port = process.env.PORT || 5000
 
-var coreModule = require('./core.js');
-var core = new coreModule.GameCore();
+var GameCore = require('./core.js');
+console.log('Gamecore', GameCore);
+var core = new GameCore();
 console.log('Loaded core');
 
 app.use(express.static(__dirname + "/"))
@@ -17,71 +18,99 @@ console.log('Listening on port', port);
 var wss = new WebSocketServer({server: server});
 console.log('Server created')
 
+// Stores connections
 var sockets = {};
 
-// Real time players
+// Player state (same ID as sockets)
 var players = {};
 
-// Keep track of last state
+// Previous player state (only what's neccessary for interpolation)
 var state_old = {};
+
+// There could be several of these per udpate frame, no need to send instantly
+var shots = [];
+var hits = [];
+var kills = [];
 
 // Keep track of average tick length for interpolation when shot is fired
 var recent_ticks = [tick_rate, tick_rate, tick_rate, tick_rate, tick_rate];
 var average_tick_rate = tick_rate;
 
+// Inputs from the client
 var handled_deltas = {};
 var delta_queues = {};
 
-var hits = [];
-var kills = [];
-
+// Some server state 
 var socket_id_counter = 0;
 var num_connections = 0;
 var server_time = 0;
 var tick_rate = 50;
+var tick_length = tick_rate;
 var update_time = new Date().getTime();
-
 var pings = {};
 var ping_rate = 1000;
 var ping_time = new Date().getTime();
+
 
 // The mighty game loop
 var game_loop = function() {
 
 	// state_older 	<-- state_old
 	// state_old   	<-- players
-	update_interpolation_state();
-
 	// players  	<-- (new state)
-	Object.keys(players).forEach(function(v) {
-		if (players[v].status === 'not_ready') {
-			console.log('Sending init request to', v);
-			pings[v] = new Date().getTime();
-			send_to_one(v, 's_ready_to_init', { player: players[v] });
-		} else if (players[v].status === 'ready' && players[v].health > 0) {
-			apply_delta_queue(v);
-		}
-	});
+	update_interpolation_state();
+	update_players();
+	
+	// Send the updated players
 	send_to_all('s_players', { 
-		players: players, 
+		players: players,
+		shots: shots,
 		hits: hits,
 		kills: kills,
 		server_time: new Date().getTime()
 	 });
+
+	// Reset
+	shots = [];
 	kills = [];
 	hits = [];
 
+	tick_length = new Date().getTime() - update_time;
+
+	// Keep an eye on latency
 	if (new Date().getTime() - ping_time > ping_rate) {
-		ping_time = new Date().getTime();
 		send_to_all('s_ping');
+		ping_time = new Date().getTime();
 	}
 
-	calculate_average_tick_length(new Date().getTime() - update_time);
+	calculate_average_tick_length(tick_length);
 	update_time = new Date().getTime();
 	
 	setTimeout(game_loop, tick_rate);
 };
 
+var update_players = function() {
+	Object.keys(players).forEach(function(v) {
+
+		if (players[v].timeToSpawn > 0 && players[v].alive === false) {
+			// Player is dead and waiting to spawn
+			players[v].timeToSpawn -= tick_length;
+		} 
+
+		if (players[v].timeToSpawn <= 0 && players[v].alive === false) {
+			// Player has waited long enough
+			core.spawnPlayer(players[v]);
+			console.log('Player', v, 'spawned');
+			send_to_all('s_player_spawned', players[v]);
+		} 
+
+		if (players[v].timeToSpawn <= 0 && players[v].alive === true) {
+			// Player is alive and active
+			apply_delta_queue(v);
+		}
+
+	});	
+};
 
 // Keep an eye on how fast the server is working
 var calculate_average_tick_length = function(last_tick_length) {
@@ -96,10 +125,6 @@ var calculate_average_tick_length = function(last_tick_length) {
 
 // Update interpolation states old and older
 var update_interpolation_state = function() {
-	state_older = {};
-	Object.keys(state_old).forEach(function(v) {
-		state_older[v] = core.copyForInterpolation(state_old[v]);
-	});
 	state_old = {};
 	Object.keys(players).forEach(function(v) {
 		state_old[v] = core.copyForInterpolation(players[v]);
@@ -122,29 +147,37 @@ var apply_delta_queue = function(socket_id) {
 
 // A user has fired. See if someone got hit, using positions from the past.
 var fire = function(socket_id, source, direction) {
+	console.log('Fire!');
 
+	if (players[socket_id].alive === false) {
+		console.log(players[socket_id].name, 'can\'t shoot because of death! :(');
+		return;
+	}
+
+	shots.push({ shooter: socket_id, source: source });
 	// TODO validate shooter position
 	var hit_data = core.fire(players, state_old, update_time, average_tick_rate, players[socket_id].latency, socket_id, source, direction);
 	if (hit_data.target_id > -1) {
-		hits.push({shooter: socket_id, victim: hit_data.target_id, point: hit_data.point});
+		hits.push( { shooter: socket_id, victim: hit_data.target_id, point: hit_data.point } );
+		console.log(players[hit_data.target_id].name, 'got hit by', players[socket_id].name, '!');
 		if (players[hit_data.target_id].health === 0) {
-			kills.push({shooter: socket_id, victim: hit_data.target_id});	
-			players[hit_data.target_id].health = -1;
+			send_to_all('s_player_killed', { shooter: socket_id, victim: hit_data.target_id });
+			console.log(players[hit_data.target_id].name, 'got killed by', players[socket_id].name, '!');
+			// Add to list of recent kills
+			kills.push( { shooter: socket_id, victim: hit_data.target_id } );
+			// Reset	
+			core.killPlayer(players[hit_data.target_id]);
 		}
+		// Instantly send shot confirmation to the shooter for fast feedback
+		// Don't wait for the next server update, snappy shots is important!
 		send_to_one(socket_id, 's_hit_target', hit_data );
 	}
 };
 
 var handle_message = function(socket_id, message, data, seq) {
-	
 	switch (message) {
 		case 'c_pong':
-			console.log('pong', (new Date().getTime() - ping_time)/2);
 			players[socket_id].latency = (new Date().getTime() - ping_time)/2;
-			break;
-		case 'c_initialized':
-			if (!players[socket_id].latency) players[socket_id].latency = (new Date().getTime() - pings[socket_id])/2;
-			players[socket_id].status = 'ready';
 			break;
 		case 'c_delta':
 			handle_delta(socket_id, data);
@@ -158,6 +191,7 @@ var handle_message = function(socket_id, message, data, seq) {
 	}
 };
 
+
 wss.on('connection', function(ws) {
 	var socket_id;
 
@@ -169,13 +203,7 @@ wss.on('connection', function(ws) {
 	delta_queues[socket_id] = [];
 
 	console.log('---------------------------------------------------');
-	console.log('New connection:', socket_id);
-	console.log('New player:', players[socket_id]);
-	console.log('Num connections', num_connections);
-	console.log('Connected sockets:');
-	Object.keys(sockets).forEach(function(v) {
-		console.log(v);
-	});
+	console.log('New player:', socket_id, players[socket_id].name);
 	console.log('---------------------------------------------------');
 
 	ws.onmessage = function(messageString) {
@@ -192,25 +220,22 @@ wss.on('connection', function(ws) {
 
 	ws.on('close', function() {
 		console.log('---------------------------------------------------');
-		console.log('Disconnected', socket_id);
+		console.log('Disconnected:', socket_id, players[socket_id].name);
+		console.log('---------------------------------------------------');
 		delete sockets[socket_id];
 		delete players[socket_id];
 		num_connections--;
-		send_to_all('s_removed_player', {id: socket_id});
-		console.log('Num connections', num_connections);
-		console.log('Connected sockets:');
-		Object.keys(sockets).forEach(function(v) {
-			console.log(v);
-		});
-		console.log('---------------------------------------------------');
+		send_to_all('s_player_disconnected', socket_id);
 	});
 
+	send_to_all('s_player_connected', players[socket_id]);
 });
 
 // Send a message to a specific player
+
 var send_to_one = function(socket_id, message, data) {
 	if (sockets[socket_id] && sockets[socket_id].readyState === 1) {
-		sockets[socket_id].send(JSON.stringify({message: message, data: data}));
+		sockets[socket_id].send(JSON.stringify({ socket_id: socket_id, message: message, data: data}));
 	}
 };
 
