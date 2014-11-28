@@ -3,7 +3,7 @@ var Vector3 = require('./vector3.js');
 // The core constants. The ultimate truth.
 function GameCore() {
 
-  this.moveSpeed = 5;
+  this.moveSpeed = 8;
   this.turnSpeed = -0.001;
   this.forward = new Vector3([0, 0, -1]);
   this.left = new Vector3([-1, 0, 0]);
@@ -13,14 +13,33 @@ function GameCore() {
   this.startHealth = 30;
   this.spawnTime = 5000;
 
-  this.numOccluders = 4;
+  this.numOccluders = 10;
   this.occluderRadiusMin = 4;
-  this.occluderRadiusMax = 10;
+  this.occluderRadiusMax = 12;
   this.occluderSpawnLimit = 40;
+
+  this.walls = 50;
 
 };
 
-GameCore.prototype.newPlayer = function(id) {
+GameCore.prototype.newPlayer = function(id, occluders) {
+
+  var that = this;
+
+  var position;
+  var clear = false;
+  while (!clear) {
+    //console.log('Trying to find a clear spot');
+    clear = true;
+    position = new Vector3([this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit), 0, this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit)]);
+    occluders.forEach(function(v) {
+      var d = Vector3.sub(position, v.position);
+      if (d.mag() < that.hitRadius+v.radius+2) {
+        clear = false;
+      }
+    });
+  }
+
   return {
     id: id,
     name: 'Goon #' + this.getRandomInt(1, 999),
@@ -28,11 +47,7 @@ GameCore.prototype.newPlayer = function(id) {
     deaths: 0,
     alive: false,
     timeToSpawn: 4000, // Give the client some time to init and set name
-    position: new Vector3([
-      this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit), 
-      0, 
-      this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit)
-    ]),
+    position: position,
     rotation: [0, 0],
     latency: 150,
     health: this.startHealth,
@@ -48,7 +63,7 @@ GameCore.prototype.generateOccluders = function() {
       radius: this.getRandomArbitrary(this.occluderRadiusMin, this.occluderRadiusMax),
       position: new Vector3([
         this.getRandomArbitrary(-this.occluderSpawnLimit, this.occluderSpawnLimit), 
-        0, 
+        -2, 
         this.getRandomArbitrary(-this.occluderSpawnLimit, this.occluderSpawnLimit)
       ])
     };
@@ -57,14 +72,26 @@ GameCore.prototype.generateOccluders = function() {
   return occluders;
 };
 
-GameCore.prototype.spawnPlayer = function(player) {
+GameCore.prototype.spawnPlayer = function(player, occluders) {
+  var that = this;
+
+  var position;
+  var clear = false;
+  while (!clear) {
+    //console.log('Trying to find a clear spot');
+    clear = true;
+    position = new Vector3([this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit), 0, this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit)]);
+    occluders.forEach(function(v) {
+      var d = Vector3.sub(position, v.position);
+      if (d.mag() < that.hitRadius+v.radius+2) {
+        clear = false;
+      }
+    });
+  }
+
   player.alive = true;
   player.timeToSpawn = -1;
-  player.position =  new Vector3([
-    this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit), 
-    0, 
-    this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit)
-  ]);
+  player.position =  position;
   player.health = this.startHealth;
 }
 
@@ -74,11 +101,49 @@ GameCore.prototype.killPlayer = function(player) {
   player.health = 0;
 };
 
-GameCore.prototype.applyDelta = function(player, delta) {
-  // TODO validate deltas against max speed and rate
+GameCore.prototype.applyDelta = function(player, delta, players, occluders) {
+  var p, d, that;
+  that = this;
+
+  // Apply!
   player.position.x += delta[0];
   player.position.y += delta[1];
   player.position.z += delta[2];
+
+   // Simple wall collision
+  if (player.position.x+this.hitRadius > this.walls || player.position.x-this.hitRadius < -this.walls) {
+    //console.log('Wall collision');
+    player.position.x -= delta[0];
+  }
+  if (player.position.z+this.hitRadius > this.walls || player.position.z-this.hitRadius < -this.walls) {
+    //console.log('Wall collision');
+    player.position.z -= delta[2];
+  }
+
+  // Simple player collision
+  Object.keys(players).forEach(function(v) {
+    d = Vector3.sub(player.position, players[v].position);
+    if (v != player.id && d.mag() < that.hitRadius*2) {
+      //console.log('Player collision');
+      d.normalize();
+      d.scale(0.3);
+      d.y = 0;
+      player.position.add(d);
+    }
+  });
+
+  // Simple occluder collision
+  occluders.forEach(function(v) {
+    d = Vector3.sub(player.position, v.position);
+    if (d.mag() < that.hitRadius + v.radius) {
+      //console.log('Occluder collision');
+      d.normalize();
+      d.scale(0.3);
+      d.y = 0;
+      player.position.add(d);
+    }
+  });
+
 };
 
 // Do the hit interpolation and calculations
@@ -108,7 +173,7 @@ GameCore.prototype.fire = function(players, state_old, update_time, average_tick
       sphereHit = that.raySphereIntersect(A, e, d, c, r);
       if (sphereHit !== null) {
         if (sphereHit.t < playerT) {
-          console.log('Hit a player! Maybe.');
+          //console.log('Hit a player! Maybe.');
           playerT = sphereHit.t;
           point = sphereHit.point;
           target_id = v;
@@ -124,7 +189,7 @@ GameCore.prototype.fire = function(players, state_old, update_time, average_tick
     r = occluder.radius;
     sphereHit = that.raySphereIntersect(A, e, d, c, r);
     if (sphereHit !== null && sphereHit.t < playerT) {
-      console.log('Occluder hit before player');
+      //console.log('Occluder hit before player');
       target_id = -1;
       break;
     }

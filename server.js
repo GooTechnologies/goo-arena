@@ -102,7 +102,7 @@ var update_players = function() {
 
 		if (players[v].timeToSpawn <= 0 && players[v].alive === false) {
 			// Player has waited long enough
-			core.spawnPlayer(players[v]);
+			core.spawnPlayer(players[v], occluders);
 			console.log('Player', v, 'spawned');
 			send_to_all('s_player_spawned', players[v]);
 		} 
@@ -142,7 +142,7 @@ var handle_delta = function(socket_id, delta) {
 // Apply a queue of deltas, reset the queue afterwards
 var apply_delta_queue = function(socket_id) {
 	delta_queues[socket_id].forEach(function(v) {
-		core.applyDelta(players[socket_id], v);
+		core.applyDelta(players[socket_id], v, players, occluders);
 		handled_deltas[socket_id]++;
 	});
 	delta_queues[socket_id] = [];
@@ -150,7 +150,7 @@ var apply_delta_queue = function(socket_id) {
 
 // A user has fired. See if someone got hit, using positions from the past.
 var fire = function(socket_id, source, direction) {
-	console.log('Fire!');
+	//console.log('Fire!');
 
 	if (players[socket_id].alive === false) {
 		console.log(players[socket_id].name, 'can\'t shoot because of death! :(');
@@ -164,6 +164,10 @@ var fire = function(socket_id, source, direction) {
 		hits.push( { shooter: socket_id, victim: hit_data.target_id, point: hit_data.point } );
 		console.log(players[hit_data.target_id].name, 'got hit by', players[socket_id].name, '!');
 		if (players[hit_data.target_id].health === 0) {
+
+			players[hit_data.target_id].deaths++;
+			players[socket_id].kills++;
+
 			send_to_all('s_player_killed', { shooter: socket_id, victim: hit_data.target_id });
 			console.log(players[hit_data.target_id].name, 'got killed by', players[socket_id].name, '!');
 			// Add to list of recent kills
@@ -204,7 +208,7 @@ wss.on('connection', function(ws) {
 	num_connections++;
 	socket_id = socket_id_counter++;
 	sockets[socket_id] = ws;
-	players[socket_id] = core.newPlayer(socket_id);
+	players[socket_id] = core.newPlayer(socket_id, occluders);
 	handled_deltas[socket_id] = 0;
 	delta_queues[socket_id] = [];
 
