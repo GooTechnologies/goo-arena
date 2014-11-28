@@ -2,6 +2,7 @@ var Vector3 = require('./vector3.js');
 
 // The core constants. The ultimate truth.
 function GameCore() {
+
   this.moveSpeed = 5;
   this.turnSpeed = -0.001;
   this.forward = new Vector3([0, 0, -1]);
@@ -11,6 +12,12 @@ function GameCore() {
   this.aimHeight = 2;
   this.startHealth = 30;
   this.spawnTime = 5000;
+
+  this.numOccluders = 4;
+  this.occluderRadiusMin = 4;
+  this.occluderRadiusMax = 10;
+  this.occluderSpawnLimit = 40;
+
 };
 
 GameCore.prototype.newPlayer = function(id) {
@@ -20,7 +27,7 @@ GameCore.prototype.newPlayer = function(id) {
     kills: 0,
     deaths: 0,
     alive: false,
-    timeToSpawn: 3000, // Give the client some time to init
+    timeToSpawn: 4000, // Give the client some time to init and set name
     position: new Vector3([
       this.getRandomArbitrary(-this.spawnLimit, this.spawnLimit), 
       0, 
@@ -32,6 +39,22 @@ GameCore.prototype.newPlayer = function(id) {
     color: [this.getRandomArbitrary(0, 1),
       this.getRandomArbitrary(0, 1), this.getRandomArbitrary(0, 1)]
   };
+};
+
+GameCore.prototype.generateOccluders = function() {
+  var occluders = [];
+  for (var i=0; i<this.numOccluders; i++) {
+    var occluder = {
+      radius: this.getRandomArbitrary(this.occluderRadiusMin, this.occluderRadiusMax),
+      position: new Vector3([
+        this.getRandomArbitrary(-this.occluderSpawnLimit, this.occluderSpawnLimit), 
+        0, 
+        this.getRandomArbitrary(-this.occluderSpawnLimit, this.occluderSpawnLimit)
+      ])
+    };
+    occluders.push(occluder);
+  } 
+  return occluders;
 };
 
 GameCore.prototype.spawnPlayer = function(player) {
@@ -59,18 +82,10 @@ GameCore.prototype.applyDelta = function(player, delta) {
 };
 
 // Do the hit interpolation and calculations
-GameCore.prototype.fire = function(players, state_old, update_time, average_tick_rate, latency, socket_id, source, direction) {
-  var r, e, t, d, c, A, B, C, emc, discSq, disc, t, t1, t2, target, point, interpolatedPlayers;
+GameCore.prototype.fire = function(players, state_old, update_time, average_tick_rate, latency, socket_id, source, direction, occluders) {
+  var r, e, t, d, c, A, B, C, emc, discSq, disc, t, t1, t2, target, point, playerT, sphereHit, target_id, that;
+  that = this;
   interpolatedPlayers = this.interpolatePlayers(players, state_old, update_time, average_tick_rate, latency);
-
-  /*
-  console.log('Fire!');
-  console.log('I am at', source);
-  console.log('My interpolated opponents');
-  Object.keys(interpolatedPlayers).forEach(function(v) {
-    console.log(v, interpolatedPlayers[v].position);
-  });
-  */
 
   // Hit data to return
   point = null;
@@ -84,35 +99,65 @@ GameCore.prototype.fire = function(players, state_old, update_time, average_tick
   A = Vector3.dot(d, d);
 
   // Check against all (interpolated) player positions and hit sphere
+
+  playerT = 99999;
+
   Object.keys(interpolatedPlayers).forEach(function(v) {
-    if (v != socket_id) {
+    if (v != socket_id && players[v].health > 0) {
       c = interpolatedPlayers[v].position.clone();
-      emc = Vector3.sub(e, c);
-      B = Vector3.dot(Vector3.scale(d, 2), emc);
-      C = Vector3.dot(emc, emc) - r*r;
-      discSq = B*B - 4*A*C;
-      if (discSq >= 0) {
-        disc = Math.sqrt(discSq);
-        t1 = (disc-B)/(2*A);
-        t2 = (-disc-B)/(2*A);
-        t = (t1 < t2) ? t1 : t2;
-        if (t > 0) {
-          point = Vector3.add(e, (Vector3.scale(d, t))).toArray();
+      sphereHit = that.raySphereIntersect(A, e, d, c, r);
+      if (sphereHit !== null) {
+        if (sphereHit.t < playerT) {
+          console.log('Hit a player! Maybe.');
+          playerT = sphereHit.t;
+          point = sphereHit.point;
           target_id = v;
         }
       }
     }
   });
 
-  // Did we hit anything? If we did, remove some health on target
-	if (target_id > 0 && players[target_id].alive === true) {
-		players[target_id].health--;
-	} else {
-    target_id = -1;
+  // Did we hit any occluders closer to the closest player?
+  for (var i=0; i<occluders.length; i++) {
+    var occluder = occluders[i];
+    c = occluder.position.clone();
+    r = occluder.radius;
+    sphereHit = that.raySphereIntersect(A, e, d, c, r);
+    if (sphereHit !== null && sphereHit.t < playerT) {
+      console.log('Occluder hit before player');
+      target_id = -1;
+      break;
+    }
   }
+
+  // Did we hit anything? If we did, remove some health on target
+	if (target_id > 0) {
+		players[target_id].health--;
+	} 
 
   // Send back the hit data
   return { target_id: target_id, point: point };
+};
+
+// == Intersect =========================================================
+
+GameCore.prototype.raySphereIntersect = function(A, e, d, c, r) {
+  var emc, B, C, discSq, t1, t2, t, point;
+  emc = Vector3.sub(e, c);
+  B = Vector3.dot(Vector3.scale(d, 2), emc);
+  C = Vector3.dot(emc, emc) - r*r;
+  discSq = B*B - 4*A*C;
+  if (discSq >= 0) {
+    disc = Math.sqrt(discSq);
+    t1 = (disc-B)/(2*A);
+    t2 = (-disc-B)/(2*A);
+    t = (t1 < t2) ? t1 : t2;
+    if (t > 0) {
+      point = Vector3.add(e, (Vector3.scale(d, t))).toArray();
+      return { t: t, point: point };
+    }
+  }
+  return null;
 };
 
 // == Random  ===========================================================

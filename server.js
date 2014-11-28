@@ -5,7 +5,6 @@ var app = express()
 var port = process.env.PORT || 5000
 
 var GameCore = require('./core.js');
-console.log('Gamecore', GameCore);
 var core = new GameCore();
 console.log('Loaded core');
 
@@ -20,6 +19,10 @@ console.log('Server created')
 
 // Stores connections
 var sockets = {};
+
+// Stuff we can't shoot
+var occluders = core.generateOccluders();
+console.log('Occluders', occluders);
 
 // Player state (same ID as sockets)
 var players = {};
@@ -156,7 +159,7 @@ var fire = function(socket_id, source, direction) {
 
 	shots.push({ shooter: socket_id, source: source });
 	// TODO validate shooter position
-	var hit_data = core.fire(players, state_old, update_time, average_tick_rate, players[socket_id].latency, socket_id, source, direction);
+	var hit_data = core.fire(players, state_old, update_time, average_tick_rate, players[socket_id].latency, socket_id, source, direction, occluders);
 	if (hit_data.target_id > -1) {
 		hits.push( { shooter: socket_id, victim: hit_data.target_id, point: hit_data.point } );
 		console.log(players[hit_data.target_id].name, 'got hit by', players[socket_id].name, '!');
@@ -184,6 +187,9 @@ var handle_message = function(socket_id, message, data, seq) {
 			break;
 		case 'c_fire':
 			fire(socket_id, data.source, data.direction);
+			break;
+		case 'c_name':
+			players[socket_id].name = data;
 			break;
 		default:
 			console.error('Unknown message:', message);
@@ -214,8 +220,13 @@ wss.on('connection', function(ws) {
 		handle_message(socket_id, message, data, seq);
 	};
 
+	ws.on('open', function() {
+		console.log('Server OPEN');
+		ws.send('s_server_open');
+	});
+
 	ws.on('error', function(error) {
-		console.error('ERROR', error);
+		console.error('Server ERROR', error);
 	});
 
 	ws.on('close', function() {
@@ -228,7 +239,15 @@ wss.on('connection', function(ws) {
 		send_to_all('s_player_disconnected', socket_id);
 	});
 
+	var init_data = {
+		player: players[socket_id],
+		core: core,
+		occluders: occluders
+	}
+
+	send_to_one(socket_id, 's_init', init_data);
 	send_to_all('s_player_connected', players[socket_id]);
+
 });
 
 // Send a message to a specific player
