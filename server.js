@@ -53,6 +53,8 @@ var game_loop = function() {
 		server_time: new Date().getTime()
 	 });
 
+	core.resetActions();
+
 	tick_length = new Date().getTime() - update_time;
 
 	// Keep an eye on latency

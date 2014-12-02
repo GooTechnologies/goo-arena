@@ -36,15 +36,17 @@ function GameCore() {
 
 }
 
+GameCore.prototype.resetActions = function() {
+	this.spawnedPlayers = [];
+	this.kills = [];
+	this.hits = [];
+	this.shots = [];
+};
+
 
 GameCore.prototype.updatePlayers = function(tickLength) {
 	var p;
 	var that = this;
-
-	this.spawnedPlayers = [];
-	this.kills = [];
-	this.hits = [];
-	this.kills = [];
 
 	Object.keys(this.players).forEach(function(v) {
 		p = that.players[v];
@@ -167,13 +169,11 @@ GameCore.prototype.spawnPlayer = function(id) {
 	player.alive = true;
 	player.timeToSpawn = -1;
 	player.health = this.constants.startHealth;
-
-	console.log('Now there are', Object.keys(this.players).length, 'players');
 };
 
 GameCore.prototype.killPlayer = function(id) {
 	var player = this.players[id];
-	console.log('Killing player', player, id);
+	console.log('Killing player', player.name, player.id);
 	player.alive = false;
 	player.timeToSpawn = this.constants.spawnTime;
 	player.health = 0;
@@ -242,7 +242,8 @@ GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, d
 
 	this.shots.push({
 		shooter: id,
-		source: source
+		source: new Vector3(source[0], source[1], source[2]),
+		direction: new Vector3(direction[0], direction[1], direction[2])
 	});
 
 	// Hit data to return
@@ -307,11 +308,13 @@ GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, d
 			});
 			// Did we kill it?
 			if (this.players[target_id].health <= 0) {
+				console.log(this.players[id].name, 'KILLED', this.players[target_id].name, 'at', point);
 				this.players[target_id].deaths++;
 				this.players[id].kills++;
 				this.kills.push({
 					shooter: id,
-					victim: target_id
+					victim: target_id,
+					point: this.players[target_id].position
 				});
 				this.killPlayer(target_id);
 			}
