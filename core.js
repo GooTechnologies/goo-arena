@@ -238,19 +238,17 @@ GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, d
 	var r, e, d, c, A, point, playerT, sphereHit, target_id, occluder, interpolatedPlayers;
 	var that = this;
 
-	//console.log('Shot from', source, 'to', direction);
-
-	this.shots.push({
-		shooter: id,
-		source: new Vector3(source[0], source[1], source[2]),
-		direction: new Vector3(direction[0], direction[1], direction[2])
-	});
-
 	// Hit data to return
 	point = null;
 	target_id = -1;
 
 	if (this.players[id].alive === true) {
+
+		this.shots.push({
+			shooter: id,
+			source: new Vector3(source[0], source[1], source[2]),
+			direction: new Vector3(direction[0], direction[1], direction[2])
+		});
 
 		// Get the interpolated player we're shooting at, using the shooter's point of view (latency)
 		interpolatedPlayers = this.interpolatePlayers(update_time, average_tick_rate, this.players[id].latency);
