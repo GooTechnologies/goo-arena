@@ -60,7 +60,6 @@ var game_loop = function() {
 	core.resetActions();
 
 	tick_length = new Date().getTime() - update_time;
-	console.log('Tick length', tick_length);
 
 	// Keep an eye on latency
 	if (new Date().getTime() - ping_time > ping_rate) {
