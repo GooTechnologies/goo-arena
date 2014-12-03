@@ -70,7 +70,9 @@ GameCore.prototype.setPlayerValue = function(id, key, value) {
 };
 
 GameCore.prototype.pushDelta = function(id, delta) {
-	this.deltaQueues[id].push(delta);
+	if (this.players[id].alive) {
+		this.deltaQueues[id].push(delta);
+	}
 };
 
 GameCore.prototype.applyDeltaQueue = function(id) {
