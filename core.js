@@ -166,7 +166,7 @@ GameCore.prototype.spawnPlayer = function(id) {
 	player.timeToSpawn = -1;
 	player.health = this.constants.startHealth;
 
-	this.playersOld[id] = this.copyForInterpolation(player);
+	this.playersOld[id] = this.copyForInterpolation(id);
 };
 
 GameCore.prototype.killPlayer = function(id) {
