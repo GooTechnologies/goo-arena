@@ -53,9 +53,14 @@ var game_loop = function() {
 		server_time: new Date().getTime()
 	 });
 
+	Object.keys(core.players).forEach(function(v) {
+		send_to_one(v, 's_handled_deltas', core.handledDeltas[v]);
+	});
+
 	core.resetActions();
 
 	tick_length = new Date().getTime() - update_time;
+	console.log('Tick length', tick_length);
 
 	// Keep an eye on latency
 	if (new Date().getTime() - ping_time > ping_rate) {
@@ -92,7 +97,7 @@ var fire = function(socket_id, source, direction) {
 };
 
 
-var handle_message = function(socket_id, message, data, seq) {
+var handle_message = function(socket_id, message, data) {
 	switch (message) {
 		case 'c_pong':
 			core.setPlayerValue(socket_id, 'latency', (new Date().getTime() - ping_time)/2);
@@ -132,11 +137,6 @@ wss.on('connection', function(ws) {
 		handle_message(socket_id, message, data, seq);
 	};
 
-	ws.on('open', function() {
-		console.log('Server OPEN');
-		ws.send('s_server_open');
-	});
-
 	ws.on('error', function(error) {
 		console.error('Server ERROR', error);
 	});
@@ -150,7 +150,7 @@ wss.on('connection', function(ws) {
 		send_to_all('s_player_disconnected', socket_id);
 	});
 
-	var init_data = {
+	init_data = {
 		player: player,
 		constants: core.constants,
 		occluders: core.occluders,

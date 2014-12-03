@@ -60,6 +60,7 @@ GameCore.prototype.updatePlayers = function(tickLength) {
 		} else {
 			that.applyDeltaQueue(v);
 		}
+
 	});
 
 };
@@ -71,7 +72,6 @@ GameCore.prototype.setPlayerValue = function(id, key, value) {
 GameCore.prototype.pushDelta = function(id, delta) {
 	this.deltaQueues[id].push(delta);
 };
-
 
 GameCore.prototype.applyDeltaQueue = function(id) {
 	var that = this;
@@ -116,7 +116,6 @@ GameCore.prototype.freeSpot = function() {
 
 
 GameCore.prototype.newPlayer = function(id) {
-	console.log('Creating new player', id);
 	this.players[id] = {
 		id: id,
 		name: 'Goon #' + this.getRandomInt(1, 999),
@@ -141,13 +140,11 @@ GameCore.prototype.newPlayer = function(id) {
 
 
 GameCore.prototype.removePlayer = function(id) {
-	console.log('Removing player');
 	delete this.players[id];
 };
 
 
 GameCore.prototype.generateOccluders = function() {
-	console.log('Generating', this.constants.numOccluders, 'occluders');
 	for (var i = 0; i < this.constants.numOccluders; i++) {
 		var occluder = {
 			radius: this.getRandomArbitrary(this.constants.occluderRadiusMin, this.constants.occluderRadiusMax),
@@ -164,7 +161,6 @@ GameCore.prototype.generateOccluders = function() {
 
 GameCore.prototype.spawnPlayer = function(id) {
 	var player = this.players[id];
-	console.log('Spawning player', player.name, player.id);
 	player.position = this.freeSpot();
 	player.alive = true;
 	player.timeToSpawn = -1;
@@ -173,7 +169,6 @@ GameCore.prototype.spawnPlayer = function(id) {
 
 GameCore.prototype.killPlayer = function(id) {
 	var player = this.players[id];
-	console.log('Killing player', player.name, player.id);
 	player.alive = false;
 	player.timeToSpawn = this.constants.spawnTime;
 	player.health = 0;
@@ -297,7 +292,6 @@ GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, d
 
 		// Did we hit anything? If we did, remove some health on target
 		if (target_id > -1) {
-			console.log(this.players[id].name, 'shot', this.players[target_id].name, 'at', point);
 			this.players[target_id].health--;
 			this.hits.push({
 				shooter: id,
@@ -306,7 +300,6 @@ GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, d
 			});
 			// Did we kill it?
 			if (this.players[target_id].health <= 0) {
-				console.log(this.players[id].name, 'KILLED', this.players[target_id].name, 'at', point);
 				this.players[target_id].deaths++;
 				this.players[id].kills++;
 				this.kills.push({
@@ -316,14 +309,8 @@ GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, d
 				});
 				this.killPlayer(target_id);
 			}
-		} else {
-			console.log('Miss');
 		}
-
-	} else {
-		console.log('You can\'t shoot if you\'re dead!');
 	}
-
 
 	// Send back the hit data
 	return {
