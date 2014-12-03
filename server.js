@@ -31,7 +31,7 @@ var socket_id_counter = 0;
 var tick_rate = 50;
 var tick_length = tick_rate;
 var update_time = new Date().getTime()
-var ping_rate = 3000;
+var ping_rate = 5000;
 var ping_time = new Date().getTime();
 
 

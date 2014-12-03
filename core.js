@@ -12,7 +12,7 @@ function GameCore() {
 		spawnLimit: 20,
 		aimHeight: 2,
 		spawnTime: 5000,
-		numOccluders: 10,
+		numOccluders: 0,
 		occluderRadiusMin: 4,
 		occluderRadiusMax: 12,
 		occluderSpawnLimit: 40,
@@ -165,6 +165,8 @@ GameCore.prototype.spawnPlayer = function(id) {
 	player.alive = true;
 	player.timeToSpawn = -1;
 	player.health = this.constants.startHealth;
+
+	this.playersOld[id] = this.copyForInterpolation(player);
 };
 
 GameCore.prototype.killPlayer = function(id) {
