@@ -12,7 +12,7 @@ function GameCore() {
 		spawnLimit: 20,
 		aimHeight: 2,
 		spawnTime: 5000,
-		numOccluders: 6,
+		numOccluders: 8,
 		occluderRadiusMin: 4,
 		occluderRadiusMax: 12,
 		occluderSpawnLimit: 40,
@@ -25,12 +25,15 @@ function GameCore() {
 	this.hits = [];
 	this.spawnedPlayers = [];
 
+	// Keep track of two states for lag compensation
 	this.players = {};
 	this.playersOld = {};
 
+	// Keep track of movement deltas for client prediction
 	this.handledDeltas = {};
 	this.deltaQueues = {};
 
+	// Stuff we can't shoot or move into
 	this.occluders = [];
 	this.generateOccluders();
 
@@ -40,87 +43,6 @@ function GameCore() {
 	console.log('Core control number', this.controlNumber);
 
 }
-
-GameCore.prototype.resetActions = function() {
-	this.spawnedPlayers = [];
-	this.kills = [];
-	this.hits = [];
-	this.shots = [];
-};
-
-
-GameCore.prototype.updatePlayers = function(tickLength) {
-	var p;
-	var that = this;
-
-	Object.keys(this.players).forEach(function(v) {
-		p = that.players[v];
-		if (p.alive === false) {
-			if (p.timeToSpawn > 0) {
-				p.timeToSpawn -= tickLength;
-			} else {
-				that.spawnPlayer(v);
-				that.spawnedPlayers.push(p);
-			}
-		} else {
-			that.applyDeltaQueue(v);
-		}
-
-	});
-
-};
-
-GameCore.prototype.setPlayerValue = function(id, key, value) {
-	this.players[id][key] = value;
-};
-
-GameCore.prototype.pushDelta = function(id, delta) {
-	if (this.players[id].alive) {
-		this.deltaQueues[id].push(delta);
-	}
-};
-
-GameCore.prototype.applyDeltaQueue = function(id) {
-	var that = this;
-	this.deltaQueues[id].forEach(function(v) {
-		that.applyDelta(id, v);
-		that.handledDeltas[id]++;
-	});
-	this.deltaQueues[id] = [];
-};
-
-
-GameCore.prototype.updateInterpolationState = function() {
-	var that = this;
-	this.playersOld = {};
-	Object.keys(this.players).forEach(function(v) {
-		that.playersOld[v] = that.copyForInterpolation(v);
-	});
-};
-
-// Find a non-occluded player spot
-// TODO check for player-player collisions
-GameCore.prototype.freeSpot = function() {
-	var that = this;
-	var position, d;
-	var clear = false;
-	while (!clear) {
-		clear = true;
-		position = new Vector3(
-			this.getRandomArbitrary(-this.constants.spawnLimit, this.constants.spawnLimit),
-			0, 
-			this.getRandomArbitrary(-this.constants.spawnLimit, this.constants.spawnLimit)
-		);
-		this.occluders.forEach(function(v) {
-			d = Vector3.sub(position, v.position);
-			if (d.mag() < that.hitRadius + v.radius + 2) {
-				clear = false;
-			}
-		});	
-	}
-	return position;
-};
-
 
 GameCore.prototype.newPlayer = function(id) {
 	this.players[id] = {
@@ -145,26 +67,9 @@ GameCore.prototype.newPlayer = function(id) {
 	return this.players[id];
 };
 
-
 GameCore.prototype.removePlayer = function(id) {
 	delete this.players[id];
 };
-
-
-GameCore.prototype.generateOccluders = function() {
-	for (var i = 0; i < this.constants.numOccluders; i++) {
-		var occluder = {
-			radius: this.getRandomArbitrary(this.constants.occluderRadiusMin, this.constants.occluderRadiusMax),
-			position: new Vector3(
-				this.getRandomArbitrary(-this.constants.occluderSpawnLimit, this.constants.occluderSpawnLimit), 
-				-2,
-				this.getRandomArbitrary(-this.constants.occluderSpawnLimit, this.constants.occluderSpawnLimit)
-			)
-		};
-		this.occluders.push(occluder);
-	}
-};
-
 
 GameCore.prototype.spawnPlayer = function(id) {
 	var player = this.players[id];
@@ -182,6 +87,79 @@ GameCore.prototype.killPlayer = function(id) {
 	player.timeToSpawn = this.constants.spawnTime;
 	player.health = 0;
 	console.log('Player', id, player.name, 'killed');
+};
+
+
+// Find a non-occluded player spot
+// TODO check for player-player collisions
+GameCore.prototype.freeSpot = function() {
+	var that = this;
+	var position, d;
+	var clear = false;
+	while (!clear) {
+		clear = true;
+		position = new Vector3(
+			this.getRandomArbitrary(-this.constants.spawnLimit, this.constants.spawnLimit),
+			0, 
+			this.getRandomArbitrary(-this.constants.spawnLimit, this.constants.spawnLimit)
+		);
+		this.occluders.forEach(function(v) {
+			d = Vector3.sub(position, v.position);
+			if (d.mag() < that.hitRadius + v.radius + 2) {
+				clear = false;
+			}
+		});	
+	}
+	return position;
+};
+
+// Main game loop function. Called every frame.
+GameCore.prototype.updatePlayers = function(tickLength) {
+	var p;
+	var that = this;
+	Object.keys(this.players).forEach(function(v) {
+		p = that.players[v];
+		if (p.alive === false) {
+			if (p.timeToSpawn > 0) {
+				p.timeToSpawn -= tickLength;
+			} else {
+				that.spawnPlayer(v);
+				that.spawnedPlayers.push(p);
+			}
+		} else {
+			that.applyDeltaQueue(v);
+		}
+	});
+};
+
+// This should be called as soon as the server has seen and sent
+// the arrays to the client
+GameCore.prototype.resetActions = function() {
+	this.spawnedPlayers = [];
+	this.kills = [];
+	this.hits = [];
+	this.shots = [];
+};
+
+GameCore.prototype.setPlayerValue = function(id, key, value) {
+	this.players[id][key] = value;
+};
+
+// Add a movement delta for processing next update to the queue.
+GameCore.prototype.pushDelta = function(id, delta) {
+	if (this.players[id].alive) {
+		this.deltaQueues[id].push(delta);
+	}
+};
+
+// Apply all deltas in the queues
+GameCore.prototype.applyDeltaQueue = function(id) {
+	var that = this;
+	this.deltaQueues[id].forEach(function(v) {
+		that.applyDelta(id, v);
+		that.handledDeltas[id]++;
+	});
+	this.deltaQueues[id] = [];
 };
 
 // Apply a movement delta, handle collisions
@@ -329,10 +307,36 @@ GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, d
 	};
 };
 
-// == Intersect =========================================================
+GameCore.prototype.generateOccluders = function() {
+	for (var i = 0; i < this.constants.numOccluders; i++) {
+		var occluder = {
+			radius: this.getRandomArbitrary(this.constants.occluderRadiusMin, this.constants.occluderRadiusMax),
+			position: new Vector3(
+				this.getRandomArbitrary(-this.constants.occluderSpawnLimit, this.constants.occluderSpawnLimit), 
+				-2,
+				this.getRandomArbitrary(-this.constants.occluderSpawnLimit, this.constants.occluderSpawnLimit)
+			)
+		};
+		this.occluders.push(occluder);
+	}
+};
 
+// == Some math helpers  ===============================================
+
+GameCore.prototype.lerp = function(a, b, t) {
+	return a * (1 - t) + b * t;
+};
+
+GameCore.prototype.getRandomInt = function(min, max) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+GameCore.prototype.getRandomArbitrary = function(min, max) {
+	return Math.random() * (max - min) + min;
+};
+
+// Ray-sphere intersection helper
 GameCore.prototype.raySphereIntersect = function(A, e, d, c, r) {
-
 	var emc, B, C, discSq, t1, t2, t, point, disc;
 	emc = Vector3.sub(e, c);
 	B = Vector3.dot(Vector3.scale(d, 2), emc);
@@ -354,17 +358,16 @@ GameCore.prototype.raySphereIntersect = function(A, e, d, c, r) {
 	return null;
 };
 
-// == Random  ===========================================================
-
-GameCore.prototype.getRandomInt = function(min, max) {
-	return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
-GameCore.prototype.getRandomArbitrary = function(min, max) {
-	return Math.random() * (max - min) + min;
-};
-
 // == Interpolation  ====================================================
+
+// Record the old state. Called before updating the players.
+GameCore.prototype.updateInterpolationState = function() {
+	var that = this;
+	this.playersOld = {};
+	Object.keys(this.players).forEach(function(v) {
+		that.playersOld[v] = that.copyForInterpolation(v);
+	});
+};
 
 // Copy what's needed for interpolation
 GameCore.prototype.copyForInterpolation = function(id) {
@@ -402,8 +405,6 @@ GameCore.prototype.interpolatePlayer = function(playerOld, playerOlder, t) {
 	};
 };
 
-GameCore.prototype.lerp = function(a, b, t) {
-	return a * (1 - t) + b * t;
-};
+// ======================================================================
 
 module.exports = GameCore;
