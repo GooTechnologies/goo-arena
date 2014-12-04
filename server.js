@@ -12,11 +12,17 @@ console.log('Loaded core');
 app.use(express.static(__dirname + "/"));
 
 var server = http.createServer(app);
+
+console.log('                     ');
+console.log('   !!!!!!!!!!!!!!    ');
+console.log('   Server created    ');
+console.log('   !!!!!!!!!!!!!!    ');
+console.log('                     ');
+
 server.listen(port);
 console.log('Listening on port', port);
 
 var wss = new WebSocketServer({server: server});
-console.log('Server created');
 
 // Stores connections
 // With the same IDs as players
@@ -50,6 +56,7 @@ var game_loop = function() {
 		shots: core.shots,
 		hits: core.hits,
 		kills: core.kills,
+		control_number: core.controlNumber,
 		server_time: new Date().getTime()
 	 });
 
@@ -153,6 +160,7 @@ wss.on('connection', function(ws) {
 		player: player,
 		constants: core.constants,
 		occluders: core.occluders,
+		control_number: core.controlNumber
 	};
 
 	send_to_one(socket_id, 's_init', init_data);

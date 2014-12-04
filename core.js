@@ -34,6 +34,11 @@ function GameCore() {
 	this.occluders = [];
 	this.generateOccluders();
 
+	// Used to detect server restarts and core re-generations
+	// in the client
+	this.controlNumber = this.getRandomInt(0, 9999999);
+	console.log('Core control number', this.controlNumber);
+
 }
 
 GameCore.prototype.resetActions = function() {
@@ -168,6 +173,7 @@ GameCore.prototype.spawnPlayer = function(id) {
 	player.timeToSpawn = -1;
 	player.health = this.constants.startHealth;
 	delete this.playersOld[id];
+	console.log('Player', id, player.name, 'spawned');
 };
 
 GameCore.prototype.killPlayer = function(id) {
@@ -175,6 +181,7 @@ GameCore.prototype.killPlayer = function(id) {
 	player.alive = false;
 	player.timeToSpawn = this.constants.spawnTime;
 	player.health = 0;
+	console.log('Player', id, player.name, 'killed');
 };
 
 // Apply a movement delta, handle collisions
