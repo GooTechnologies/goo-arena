@@ -241,7 +241,7 @@ GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, d
 	d.normalize();
 	// Origin of shot
 	e = new Vector3(source[0], source[1], source[2]);
-	e.add(new Vector3(0, this.constants.aimHeight, 0));
+	//e.add(new Vector3(0, this.constants.aimHeight, 0));
 
 	// Hit data to return
 	point = null;
@@ -366,7 +366,7 @@ GameCore.prototype.updateBots = function() {
 				// Bots are good shooters. They also shoot from ground level.
 				var aim = Vector3.sub(that.players[targetId].position, that.players[v.id].position);
 				var adjustedPos = that.players[v.id].position.clone();
-				adjustedPos.y = -that.constants.aimHeight;
+				//adjustedPos.y = -that.constants.aimHeight;
 				that.fire(new Date().getTime(), 50, v.id, adjustedPos.toArray(), aim.toArray());
 			}
 
