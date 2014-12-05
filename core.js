@@ -82,6 +82,7 @@ GameCore.prototype.spawnPlayer = function(id) {
 	player.alive = true;
 	player.timeToSpawn = -1;
 	player.health = this.constants.startHealth;
+	this.deltaQueues[id] = [];
 	delete this.playersOld[id];
 	console.log('Player', id, player.name, 'spawned');
 };
@@ -91,6 +92,7 @@ GameCore.prototype.killPlayer = function(id) {
 	player.alive = false;
 	player.timeToSpawn = this.constants.spawnTime;
 	player.health = 0;
+	this.deltaQueues[id] = [];
 	console.log('Player', id, player.name, 'killed');
 };
 
