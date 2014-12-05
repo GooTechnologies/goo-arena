@@ -98,7 +98,7 @@ var calculate_average_tick_length = function(last_tick_length) {
 var fire = function(socket_id, source, direction) {
 	var hit_data = core.fire(update_time, average_tick_rate, socket_id, source, direction);
 	// Send hit confirmation ASAP
-	if (hit_data.target_id > -1) {
+	if (hit_data !== undefined && hit_data.target_id > -1) {
 		send_to_one(socket_id, 's_hit_target', hit_data );
 	}
 };
@@ -117,6 +117,14 @@ var handle_message = function(socket_id, message, data) {
 			break;
 		case 'c_name':
 			core.setPlayerValue(socket_id, 'name', data);
+			break;
+		case 'c_add_bot':
+			var bot = core.addBot();
+			send_to_all('s_player_connected', core.players[bot.id]);
+			break;
+		case 'c_remove_bot':
+			var bot = core.removeBot();
+			send_to_all('s_player_disconnected', bot.id);
 			break;
 		default:
 			console.error('Unknown message:', message);
@@ -159,6 +167,7 @@ wss.on('connection', function(ws) {
 
 	init_data = {
 		player: player,
+		players: core.players,
 		constants: core.constants,
 		occluders: core.occluders,
 		control_number: core.controlNumber

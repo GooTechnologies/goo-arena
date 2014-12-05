@@ -11,14 +11,14 @@ function GameCore() {
 		hitRadius: 1,
 		spawnLimit: 40,
 		aimHeight: 2,
-		spawnTime: 5000,
+		spawnTime: 8000,
 		numOccluders: 10,
 		occluderRadiusMin: 4,
 		occluderRadiusMax: 12,
 		occluderSpawnLimit: 40,
 		walls: 50,
 		startHealth: 10,
-		numBots: 2
+		maxBots: 4
 	};
 
 	this.kills = [];
@@ -39,8 +39,8 @@ function GameCore() {
 	this.generateOccluders();
 
 	// Bots store their current deltas
-	this.bots = {};
-	this.initBots();
+	this.botId = 1000000;
+	this.bots = [];
 
 	// Used to detect server restarts and core re-generations
 	// in the client
@@ -223,87 +223,91 @@ GameCore.prototype.applyDelta = function(id, delta) {
 // Do the hit interpolation and calculations
 // TODO validate source position - could the player reasonably fire from that spot?
 GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, direction) {
-	var r, e, d, c, A, point, playerT, sphereHit, target_id, occluder, interpolatedPlayers;
+	var r, e, d, dInf, c, A, point, hitT, sphereHit, target_id, interpolatedPlayers;
 	var that = this;
+
+	// Can't shoot if you're dead! Hah!
+	if (this.players[id].alive !== true) return;
+
+	// Get the interpolated player we're shooting at, using the shooter's point of view (latency)
+	interpolatedPlayers = this.interpolatePlayers(update_time, average_tick_rate, this.players[id].latency);
+
+	// Radius of target sphere
+	r = this.constants.hitRadius;
+	// Direction of shot
+	d = new Vector3(direction[0], direction[1], direction[2]);
+	d.normalize();
+	// Origin of shot
+	e = new Vector3(source[0], source[1], source[2]);
+	e.add(new Vector3(0, this.constants.aimHeight, 0));
 
 	// Hit data to return
 	point = null;
 	target_id = -1;
+	dInf = d.clone();
+	dInf.scale(100);
+	// Initial point corresponds to a player and occluder miss.
+	point = Vector3.add(e, dInf);
 
-	if (this.players[id].alive === true) {
+	A = Vector3.dot(d, d);
 
-		this.shots.push({
-			shooter: id,
-			source: new Vector3(source[0], source[1], source[2]),
-			direction: new Vector3(direction[0], direction[1], direction[2])
-		});
+	// Check against all (interpolated) player positions and hit spheres
+	hitT = 99999;
 
-		// Get the interpolated player we're shooting at, using the shooter's point of view (latency)
-		interpolatedPlayers = this.interpolatePlayers(update_time, average_tick_rate, this.players[id].latency);
-
-		// Radius of target sphere
-		r = this.constants.hitRadius;
-		// Direction of shot
-		d = new Vector3(direction[0], direction[1], direction[2]);
-		d.normalize();
-		// Origin of shot
-		e = new Vector3(source[0], source[1], source[2]);
-		e.add(new Vector3(0, this.constants.aimHeight, 0));
-
-		A = Vector3.dot(d, d);
-
-		// Check against all (interpolated) player positions and hit spheres
-		playerT = 99999;
-
-		Object.keys(interpolatedPlayers).forEach(function(v) {
-			//console.log('Checking against', that.players[v]);
-			if (v != id && that.players[v].health > 0) {
-				c = interpolatedPlayers[v].position.clone();
-				//console.log('At position', c);
-				sphereHit = that.raySphereIntersect(A, e, d, c, r);
-				if (sphereHit !== null) {
-					if (sphereHit.t < playerT) {
-						playerT = sphereHit.t;
-						point = sphereHit.point;
-						target_id = v;
-					}
-				}
-			}
-		});
-
-		// Did we hit any occluders closer to the closest player?
-		for (var i=0; i<this.occluders.length; i++) {
-			occluder = this.occluders[i];
-			c = occluder.position.clone();
-			r = occluder.radius;
+	Object.keys(interpolatedPlayers).forEach(function(v) {
+		//console.log('Checking against', that.players[v]);
+		if (v != id && that.players[v].alive === true) {
+			c = interpolatedPlayers[v].position.clone();
+			//console.log('At position', c);
 			sphereHit = that.raySphereIntersect(A, e, d, c, r);
-			if (sphereHit !== null && sphereHit.t < playerT) {
-				target_id = -1;
-				break;
+			if (sphereHit !== null && sphereHit.t < hitT) {
+				hitT = sphereHit.t;
+				point = sphereHit.point.clone();
+				target_id = v;
 			}
 		}
+	});
 
-		// Did we hit anything? If we did, remove some health on target
-		if (target_id > -1) {
-			this.players[target_id].health--;
-			this.hits.push({
+	// Did we hit any occluders closer to the closest player?
+	//for (var i=0; i<this.occluders.length; i++) {
+	this.occluders.forEach(function(v) {
+		c = v.position.clone();
+		r = v.radius;
+		sphereHit = that.raySphereIntersect(A, e, d, c, r);
+		if (sphereHit !== null && sphereHit.t < hitT) {
+			target_id = -1;
+			hitT = sphereHit.t;
+			point = sphereHit.point.clone();
+		}
+	});
+
+	// Did we hit anything? If we did, remove some health on target
+	if (target_id > -1) {
+		this.players[target_id].health--;
+		this.hits.push({
+			shooter: id,
+			victim: target_id,
+			point: point
+		});
+		// Did we kill it?
+		if (this.players[target_id].health <= 0) {
+			this.players[target_id].deaths++;
+			this.players[id].kills++;
+			this.kills.push({
 				shooter: id,
 				victim: target_id,
-				point: point
+				point: this.players[target_id].position.clone()
 			});
-			// Did we kill it?
-			if (this.players[target_id].health <= 0) {
-				this.players[target_id].deaths++;
-				this.players[id].kills++;
-				this.kills.push({
-					shooter: id,
-					victim: target_id,
-					point: this.players[target_id].position
-				});
-				this.killPlayer(target_id);
-			}
+			this.killPlayer(target_id);
 		}
 	}
+
+	this.shots.push({
+		shooter: id,
+		source: new Vector3(source[0], source[1], source[2]),
+		direction: new Vector3(direction[0], direction[1], direction[2]),
+		impact: point
+	});
 
 	// Send back the hit data
 	return {
@@ -312,44 +316,57 @@ GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, d
 	};
 };
 
-GameCore.prototype.initBots = function() {
-	for (var i=0; i<this.constants.numBots; i++) {
-		// Just some high ID, unlikely to be taken by a real player
-		var bot = this.newPlayer(100000 + i, "GooBot #" + this.getRandomInt(1, 9999));
-		this.bots[bot.id] = [0, 0, 0];
-	}
+GameCore.prototype.addBot = function() {
+	if (this.bots.length >= this.constants.maxBots) return;
+	console.log('Adding a bot');
+	var bot = this.newPlayer(this.botId++, 'GooBot #' + this.getRandomInt(1, 9999));
+	this.bots.push({
+		id: bot.id,
+		delta: [0, 0, 0]
+	});
+	return bot;
 };
 
-GameCore.prototype.updateBots = function(tickLength) {
+GameCore.prototype.removeBot = function() {
+	console.log('Removing a bot');
+	if (this.bots.length < 1) return;
+	var bot = this.bots.pop();
+	this.removePlayer(bot.id);
+	return bot;
+};
+
+GameCore.prototype.updateBots = function() {
 	var that = this;
-	Object.keys(this.bots).forEach(function(v) {
+	this.bots.forEach(function(v) {
 
 		// TODO sync bot speed with move speed
 		if (Math.random() < 0.02) {
-			that.bots[v] = [
-				that.getRandomArbitrary(-0.2, 0.2),
+			v.delta = [
+				that.getRandomArbitrary(-0.3, 0.3),
 				0,
-				that.getRandomArbitrary(-0.2, 0.2)
-			]
+				that.getRandomArbitrary(-0.3, 0.3)
+			];
 		}
-		that.pushDelta(v, that.bots[v]);
+		that.pushDelta(v.id, v.delta);
 
 		// Shoot at a random target
-		if (Math.random() < 0.02) {
+		if (Math.random() < 0.05) {
 
 			var targetId;
 			var n = 0;
 			Object.keys(that.players).forEach(function(w) {
-				if (w !== v && Math.random() < 1/++n) {
+				if (w !== v.id && that.players[w].alive === true && Math.random() < 1/++n) {
 					targetId = w;
 				}
 			});
 
-			// Bots are good shooters. They also shoot from ground level.
-			var aim = Vector3.sub(that.players[targetId].position, that.players[v].position);
-			var adjustedPos = that.players[v].position.clone();
-			adjustedPos.y = -that.constants.aimHeight;
-			that.fire(new Date().getTime(), 50, v, adjustedPos.toArray(), aim.toArray());
+			if (targetId) {
+				// Bots are good shooters. They also shoot from ground level.
+				var aim = Vector3.sub(that.players[targetId].position, that.players[v.id].position);
+				var adjustedPos = that.players[v.id].position.clone();
+				adjustedPos.y = -that.constants.aimHeight;
+				that.fire(new Date().getTime(), 50, v.id, adjustedPos.toArray(), aim.toArray());
+			}
 
 		}
 	});
@@ -396,7 +413,7 @@ GameCore.prototype.raySphereIntersect = function(A, e, d, c, r) {
 		t2 = (-disc - B) / (2 * A);
 		t = (t1 < t2) ? t1 : t2;
 		if (t > 0) {
-			point = Vector3.add(e, (Vector3.scale(d, t))).toArray();
+			point = Vector3.add(e, (Vector3.scale(d, t)));
 			return {
 				t: t,
 				point: point
