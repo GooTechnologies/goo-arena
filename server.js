@@ -120,11 +120,11 @@ var handle_message = function(socket_id, message, data) {
 			break;
 		case 'c_add_bot':
 			var bot = core.addBot();
-			send_to_all('s_player_connected', core.players[bot.id]);
+			if (bot) send_to_all('s_player_connected', core.players[bot.id]);
 			break;
 		case 'c_remove_bot':
 			var bot = core.removeBot();
-			send_to_all('s_player_disconnected', bot.id);
+			if (bot) send_to_all('s_player_disconnected', bot.id);
 			break;
 		default:
 			console.error('Unknown message:', message);
