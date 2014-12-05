@@ -9,15 +9,16 @@ function GameCore() {
 		forward: new Vector3(0, 0, -1),
 		left: new Vector3(-1, 0, 0),
 		hitRadius: 1,
-		spawnLimit: 20,
+		spawnLimit: 40,
 		aimHeight: 2,
 		spawnTime: 5000,
-		numOccluders: 8,
+		numOccluders: 10,
 		occluderRadiusMin: 4,
 		occluderRadiusMax: 12,
 		occluderSpawnLimit: 40,
 		walls: 50,
-		startHealth: 10
+		startHealth: 10,
+		numBots: 2
 	};
 
 	this.kills = [];
@@ -37,6 +38,10 @@ function GameCore() {
 	this.occluders = [];
 	this.generateOccluders();
 
+	// Bots store their current deltas
+	this.bots = {};
+	this.initBots();
+
 	// Used to detect server restarts and core re-generations
 	// in the client
 	this.controlNumber = this.getRandomInt(0, 9999999);
@@ -44,14 +49,14 @@ function GameCore() {
 
 }
 
-GameCore.prototype.newPlayer = function(id) {
+GameCore.prototype.newPlayer = function(id, name) {
 	this.players[id] = {
 		id: id,
-		name: 'Goon #' + this.getRandomInt(1, 999),
+		name: name !== undefined ? name : 'Goon #' + this.getRandomInt(1, 999),
 		kills: 0,
 		deaths: 0,
 		alive: false,
-		timeToSpawn: 3000, // Give the client some time to init and set name
+		timeToSpawn: 5000, // Give the client some time to init and set name
 		position: this.freeSpot(),
 		rotation: [0, 0],
 		latency: 50, // Guess
@@ -105,7 +110,7 @@ GameCore.prototype.freeSpot = function() {
 		);
 		this.occluders.forEach(function(v) {
 			d = Vector3.sub(position, v.position);
-			if (d.mag() < that.hitRadius + v.radius + 2) {
+			if (d.mag() < that.constants.hitRadius + v.radius + 2) {
 				clear = false;
 			}
 		});	
@@ -305,6 +310,49 @@ GameCore.prototype.fire = function(update_time, average_tick_rate, id, source, d
 		target_id: target_id,
 		point: point
 	};
+};
+
+GameCore.prototype.initBots = function() {
+	for (var i=0; i<this.constants.numBots; i++) {
+		// Just some high ID, unlikely to be taken by a real player
+		var bot = this.newPlayer(100000 + i, "GooBot #" + this.getRandomInt(1, 9999));
+		this.bots[bot.id] = [0, 0, 0];
+	}
+};
+
+GameCore.prototype.updateBots = function(tickLength) {
+	var that = this;
+	Object.keys(this.bots).forEach(function(v) {
+
+		// TODO sync bot speed with move speed
+		if (Math.random() < 0.02) {
+			that.bots[v] = [
+				that.getRandomArbitrary(-0.2, 0.2),
+				0,
+				that.getRandomArbitrary(-0.2, 0.2)
+			]
+		}
+		that.pushDelta(v, that.bots[v]);
+
+		// Shoot at a random target
+		if (Math.random() < 0.02) {
+
+			var targetId;
+			var n = 0;
+			Object.keys(that.players).forEach(function(w) {
+				if (w !== v && Math.random() < 1/++n) {
+					targetId = w;
+				}
+			});
+
+			// Bots are good shooters. They also shoot from ground level.
+			var aim = Vector3.sub(that.players[targetId].position, that.players[v].position);
+			var adjustedPos = that.players[v].position.clone();
+			adjustedPos.y = -that.constants.aimHeight;
+			that.fire(new Date().getTime(), 50, v, adjustedPos.toArray(), aim.toArray());
+
+		}
+	});
 };
 
 GameCore.prototype.generateOccluders = function() {

@@ -45,6 +45,7 @@ var ping_time = new Date().getTime();
 var game_loop = function() {
 
 	core.updateInterpolationState();
+	core.updateBots(tick_length);
 	core.updatePlayers(tick_length);
 
 	core.spawnedPlayers.forEach(function(v) {
