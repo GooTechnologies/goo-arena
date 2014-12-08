@@ -1,10 +1,9 @@
 {
-	"name": "goo-tanks-ws",
+	"name": "goo-arena",
 	"version": "0.0.1",
 	"dependencies": {
 		"ws": "0.4.x",
-		"express": "3.x",
-		"nodetime": "*"
+		"express": "3.x"
 	},
 	"engines": {
 		"node": "0.10.x",

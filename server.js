@@ -1,12 +1,5 @@
 'use strict';
 
-// Profiling
-require('nodetime').profile({
-	accountKey: '2fccdbd2b400ebeb970b581030a179111d29dfa8', 
-	appName: 'Node.js Application'
-});
-
-
 var WebSocketServer = require('ws').Server;
 var http = require('http');
 var express = require('express');
@@ -22,9 +15,9 @@ app.use(express.static(__dirname + "/"));
 var server = http.createServer(app);
 
 console.log('                     ');
-console.log('   !!!!!!!!!!!!!!    ');
+console.log('   --------------    ');
 console.log('   Server created    ');
-console.log('   !!!!!!!!!!!!!!    ');
+console.log('   --------------    ');
 console.log('                     ');
 
 server.listen(port);
