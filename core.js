@@ -26,7 +26,7 @@ function GameCore() {
 	this.hits = [];
 	this.spawnedPlayers = [];
 
-	// Keep track of two states for lag compensation
+	// Keep track of two states for lag compensation when shooting
 	this.players = {};
 	this.playersOld = {};
 
@@ -43,9 +43,8 @@ function GameCore() {
 	this.bots = [];
 
 	// Used to detect server restarts and core re-generations
-	// in the client
+	// in the client (should not be needed)
 	this.controlNumber = this.getRandomInt(0, 9999999);
-	console.log('Core control number', this.controlNumber);
 
 }
 
