@@ -18,7 +18,7 @@ function GameCore() {
 		occluderSpawnLimit: 40,
 		walls: 50,
 		startHealth: 10,
-		maxBots: 4
+		maxBots: 10
 	};
 
 	this.kills = [];
@@ -351,7 +351,7 @@ GameCore.prototype.updateBots = function() {
 		that.pushDelta(v.id, v.delta);
 
 		// Shoot at a random target
-		if (Math.random() < 0.05) {
+		if (Math.random() < 0.2) {
 
 			var targetId;
 			var n = 0;
