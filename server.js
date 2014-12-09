@@ -149,7 +149,6 @@ wss.on('connection', function(ws) {
 		var message, data, seq;
 		message = JSON.parse(messageString.data).message;
 		data = JSON.parse(messageString.data).data;
-		seq = JSON.parse(messageString.data).seq;
 		handle_message(socket_id, message, data, seq);
 	};
 

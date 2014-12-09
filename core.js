@@ -351,7 +351,7 @@ GameCore.prototype.updateBots = function() {
 		that.pushDelta(v.id, v.delta);
 
 		// Shoot at a random target
-		if (Math.random() < 0.2) {
+		if (Math.random() < 0.05) {
 
 			var targetId;
 			var n = 0;
