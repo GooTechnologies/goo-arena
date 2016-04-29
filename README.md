@@ -17,7 +17,3 @@ Check out this repo, install with 'npm install' and start with 'npm start'.
 3. Export the scene as Webpage: Scene > Export > Webpage.
 4. Serve the webpage locally on any port. Open in any browser.
 5. Play!
-
-## On Heroku
-
-If you set up a server on Heroku you can play the game directly in the Create editor.

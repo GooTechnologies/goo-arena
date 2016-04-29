@@ -10,20 +10,19 @@ var GameCore = require('./core.js');
 var core = new GameCore();
 console.log('Loaded core');
 
-app.use(express.static(__dirname + "/"));
+var staticApp = express();
+staticApp.use(express.static(__dirname + "/public"));
+var staticServer = http.createServer(staticApp);
+var staticPort = 5001;
+staticServer.listen(staticPort);
+console.log('Static server listening on port ' + staticPort);
 
 var server = http.createServer(app);
-
-console.log('                     ');
-console.log('   --------------    ');
-console.log('   Server created    ');
-console.log('   --------------    ');
-console.log('                     ');
-
 server.listen(port);
-console.log('Listening on port', port);
-
-var wss = new WebSocketServer({server: server});
+var wss = new WebSocketServer({
+	server: server
+});
+console.log('WebSocket server listening on port ' + port);
 
 // Stores connections
 // With the same IDs as players
@@ -33,7 +32,7 @@ var sockets = {};
 var recent_ticks = [tick_rate, tick_rate, tick_rate, tick_rate, tick_rate];
 var average_tick_rate = tick_rate;
 
-// Some server state 
+// Some server state
 var socket_id_counter = 0;
 var tick_rate = 50;
 var tick_length = tick_rate;
@@ -52,8 +51,8 @@ var game_loop = function() {
 	core.spawnedPlayers.forEach(function(v) {
 		send_to_all('s_player_spawned', v);
 	});
-	
-	send_to_all('s_players', { 
+
+	send_to_all('s_players', {
 		players: core.players,
 		shots: core.shots,
 		hits: core.hits,
@@ -78,7 +77,7 @@ var game_loop = function() {
 
 	calculate_average_tick_length(tick_length);
 	update_time = new Date().getTime();
-	
+
 	setTimeout(game_loop, tick_rate);
 };
 
@@ -191,7 +190,7 @@ var send_to_one = function(socket_id, message, data) {
 var send_to_all = function(message, data) {
 	Object.keys(sockets).forEach(function(v) {
 		send_to_one(v, message, data);
-	});	
+	});
 };
 
 
