@@ -1,1 +1,741 @@
-webpackJsonp([20],{0:function(a,b,c){a.exports=c(507)},507:function(a,b,c){if(a.exports={AbstractTimelineChannel:c(508),EventChannel:c(509),TimelineComponent:c(510),TimelineComponentHandler:c(511),TimelineSystem:c(513),ValueChannel:c(512)},"undefined"!=typeof window)for(var d in a.exports)window.goo[d]=a.exports[d]},508:function(a,b){function c(a){this.id=a,this.enabled=!0,this.keyframes=[],this.lastTime=0}c.prototype._find=function(a,b){var c=0,d=a.length-1,e=a[a.length-1].time;if(b>e)return d;for(;d-c>1;){var f=Math.floor((d+c)/2),g=a[f].time;b>g?c=f:d=f}return c},c.prototype.sort=function(){return this.keyframes.sort(function(a,b){return a.time-b.time}),this.lastTime=this.keyframes[this.keyframes.length-1].time,this},a.exports=c},509:function(a,b,c){function d(a){e.call(this,a),this.oldTime=0,this.callbackIndex=0}var e=c(508);d.prototype=Object.create(e.prototype),d.prototype.constructor=e,d.prototype.addCallback=function(a,b,c){var d={id:a,time:b,callback:c},e=this.keyframes;if(b>this.lastTime)e.push(d),this.lastTime=b;else if(!e.length||b<e[0].time)e.unshift(d);else{var f=this._find(e,b)+1;e.splice(f,0,d)}return this},d.prototype.update=function(a){if(!this.enabled)return this;var b=this.keyframes;if(!b.length)return this;if(a<this.oldTime){for(;this.callbackIndex<b.length;)b[this.callbackIndex].callback(),this.callbackIndex++;this.callbackIndex=0}for(;this.callbackIndex<b.length&&a>=b[this.callbackIndex].time&&a!==this.oldTime;)b[this.callbackIndex].callback(),this.callbackIndex++;return this.oldTime=a,this},d.prototype.setTime=function(a){return this.enabled&&this.keyframes.length?(a<=this.keyframes[0].time?this.callbackIndex=0:this.callbackIndex=this._find(this.keyframes,a)+1,this.oldTime=a,this):this},a.exports=d},510:function(a,b,c){function d(){e.apply(this,arguments),this.type="TimelineComponent",this.channels=[],this.time=0,this.duration=0,this.loop=!1,this.playing=!0,this.autoStart=!0}var e=c(20);d.prototype=Object.create(e.prototype),d.prototype.constructor=d,d.prototype.addChannel=function(a){return this.channels.push(a),this},d.prototype.update=function(a){if(this.playing){var b=this.time+a;if(b>this.duration&&(this.loop?b%=this.duration:b=this.duration),b!==this.time){this.time=b;for(var c=0;c<this.channels.length;c++){var d=this.channels[c];d.update(this.time)}}}},d.prototype.start=function(){this.playing=!0},d.prototype.resume=d.prototype.start,d.prototype.pause=function(){this.playing=!1},d.prototype.stop=function(){this.playing=!1,this.setTime(0)},d.prototype.setTime=function(a){this.time=a;for(var b=0;b<this.channels.length;b++){var c=this.channels[b];c.setTime(this.time)}return this},d.prototype.getValues=function(){for(var a={},b=0;b<this.channels.length;b++){var c=this.channels[b];"undefined"!=typeof c.value&&c.keyframes.length&&(a[c.id]=c.value)}return a},a.exports=d},511:function(a,b,c){function d(){i.apply(this,arguments),this._type="TimelineComponent"}function e(a){if(!a)return p.Linear.None;var b=a.indexOf("."),c=a.substr(0,b),d=a.substr(b+1);return p[c][d]}function f(a,b,c){var d=!1,f=m.find(c.keyframes,function(a){return a.id===b}),g=e(a.easing);return f?(f.time!==+a.time&&(d=!0),f.time=+a.time,f.value=+a.value,f.easingFunction=g):c.addKeyframe(b,a.time,a.value,g),{needsResorting:d}}function g(a,b,c,d){var e=!1,f=m.find(c.keyframes,function(a){return a.id===b}),g=function(){n.emit(d.eventName,a.value)};return f?(f.time!==+a.time&&(e=!0),f.time=+a.time,f.callback=g):c.addCallback(b,a.time,g),{needsResorting:e}}function h(a,b,c,e,h){var i=m.find(c.channels,function(a){return a.id===b});if(i){if(a.entityId&&i.callbackUpdate&&i.callbackUpdate.rotation){var j=h[a.entityId]=i.callbackUpdate.rotation;j[0]=0,j[1]=0,j[2]=0}}else{var n=a.propertyKey;if(n){var o=a.entityId;o&&!h[o]&&(h[o]=[0,0,0]);var p=d.tweenMap[n](o,e,h[o]);i=new k(b,{callbackUpdate:p})}else i=new l(b);c.channels.push(i)}i.enabled=a.enabled!==!1,i.keyframes=i.keyframes.filter(function(b){return!!a.keyframes[b.id]});var q=!1;if(a.propertyKey)for(var r in a.keyframes){var s=a.keyframes[r],t=f(s,r,i,a);q=q||t.needsResorting}else for(var r in a.keyframes){var s=a.keyframes[r],t=g(s,r,i,a);q=q||t.needsResorting}q&&i.sort()}var i=c(88),j=c(510),k=c(512),l=c(509),m=c(86),n=c(44),o=c(6),p=c(173);d.prototype=Object.create(i.prototype),d.prototype.constructor=d,i._registerClass("timeline",d),d.prototype._prepare=function(){},d.prototype._create=function(){var a=new j;return a},d.tweenMap={translationX:k.getSimpleTransformTweener.bind(null,"translation","x"),translationY:k.getSimpleTransformTweener.bind(null,"translation","y"),translationZ:k.getSimpleTransformTweener.bind(null,"translation","z"),scaleX:k.getSimpleTransformTweener.bind(null,"scale","x"),scaleY:k.getSimpleTransformTweener.bind(null,"scale","y"),scaleZ:k.getSimpleTransformTweener.bind(null,"scale","z"),rotationX:k.getRotationTweener.bind(null,0),rotationY:k.getRotationTweener.bind(null,1),rotationZ:k.getRotationTweener.bind(null,2)},d.prototype.update=function(a,b,c){var d=this;return i.prototype.update.call(this,a,b,c).then(function(a){if(a){isNaN(b.duration)||(a.duration=+b.duration),a.loop=b.loop.enabled===!0,a.autoStart=void 0!==b.autoStart?b.autoStart:!0,a.autoStart?a.start():a.stop(),a.channels=a.channels.filter(function(a){return!!b.channels[a.id]});var c=function(a){return d.world.entityManager.getEntityById(a)},e={};return o.forEach(b.channels,function(b){h(b,b.id,a,c,e)},null,"sortValue"),a}})},a.exports=d},512:function(a,b,c){function d(a,b){e.call(this,a),this.value=0,b=b||{},this.callbackUpdate=b.callbackUpdate,this.callbackEnd=b.callbackEnd}var e=c(508),f=c(9);d.prototype=Object.create(e.prototype),d.prototype.constructor=d,d.prototype.addKeyframe=function(a,b,c,d){var e={id:a,time:b,value:c,easingFunction:d};if(b>this.lastTime)this.keyframes.push(e),this.lastTime=b;else if(!this.keyframes.length||b<this.keyframes[0].time)this.keyframes.unshift(e);else{var f=this._find(this.keyframes,b)+1;this.keyframes.splice(f,0,e)}return this},d.prototype.update=function(a){if(!this.enabled)return this.value;if(!this.keyframes.length)return this.value;var b,c;if(a<=this.keyframes[0].time)b=this.keyframes[0].value;else if(a>=this.keyframes[this.keyframes.length-1].time)b=this.keyframes[this.keyframes.length-1].value;else{c=this._find(this.keyframes,a);var d=this.keyframes[c],e=this.keyframes[c+1],g=(a-d.time)/(e.time-d.time),h=d.easingFunction(g);b=f.lerp(h,d.value,e.value)}return this.value=b,this.callbackUpdate(a,this.value,c),this},d.prototype.setTime=d.prototype.update,d.getSimpleTransformTweener=function(a,b,c,d){var e;return function(f,g){e||(e=d(c)),e&&(e.transformComponent.transform[a][b]=g,e.transformComponent.setUpdated())}},d.getRotationTweener=function(a,b,c,d){var e,g=function(d,h){if(e||(e=c(b)),e){var i=g.rotation;i[a]=h*f.DEG_TO_RAD,e.transformComponent.transform.rotation.fromAngles(i[0],i[1],i[2]),e.transformComponent.setUpdated()}};return g.rotation=d,g},a.exports=d},513:function(a,b,c){function d(){e.call(this,"TimelineSystem",["TimelineComponent"])}var e=c(42);d.prototype=Object.create(e.prototype),d.prototype.constructor=d,d.prototype.process=function(a,b){for(var c=0;c<this._activeEntities.length;c++){var d=this._activeEntities[c];d.timelineComponent.update(b)}},d.prototype.play=function(){this.passive=!1;for(var a=this._activeEntities,b=0;b<a.length;b++){var c=a[b].timelineComponent;c.autoStart&&c.start()}},d.prototype.pause=function(){this.passive=!0;for(var a=this._activeEntities,b=0;b<a.length;b++){var c=a[b].timelineComponent;c.pause()}},d.prototype.resume=d.prototype.play,d.prototype.stop=function(){this.passive=!0;for(var a=this._activeEntities,b=0;b<a.length;b++){var c=a[b].timelineComponent;c.stop()}},a.exports=d}});
+/* Goo Engine UNOFFICIAL
+ * Copyright 2016 Goo Technologies AB
+ */
+
+webpackJsonp([20],{
+
+/***/ 0:
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__(507);
+
+
+/***/ },
+
+/***/ 507:
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = {
+		AbstractTimelineChannel: __webpack_require__(508),
+		EventChannel: __webpack_require__(509),
+		TimelineComponent: __webpack_require__(510),
+		TimelineComponentHandler: __webpack_require__(511),
+		TimelineSystem: __webpack_require__(513),
+		ValueChannel: __webpack_require__(512)
+	};
+	if (typeof(window) !== 'undefined') {
+		for (var key in module.exports) {
+			window.goo[key] = module.exports[key];
+		}
+	}
+
+/***/ },
+
+/***/ 508:
+/***/ function(module, exports) {
+
+	function AbstractTimelineChannel(id) {
+		this.id = id;
+		this.enabled = true;
+
+		this.keyframes = [];
+		this.lastTime = 0;
+	}
+
+	/**
+	 * Searching for the entry that is previous to the given time
+	 * @private
+	 * @param sortedArray
+	 * @param time
+	 */
+	//! AT: could convert into a more general ArrayUtils.pluck and binary search but that creates extra arrays
+	AbstractTimelineChannel.prototype._find = function (sortedArray, time) {
+		var start = 0;
+		var end = sortedArray.length - 1;
+		var lastTime = sortedArray[sortedArray.length - 1].time;
+
+		if (time > lastTime) { return end; }
+
+		while (end - start > 1) {
+			var mid = Math.floor((end + start) / 2);
+			var midTime = sortedArray[mid].time;
+
+			if (time > midTime) {
+				start = mid;
+			} else {
+				end = mid;
+			}
+		}
+
+		return start;
+	};
+
+	/**
+	 * Called only when mutating the start times of entries to be sure that the order is kept
+	 * @private
+	 */
+	AbstractTimelineChannel.prototype.sort = function () {
+		this.keyframes.sort(function (a, b) {
+			return a.time - b.time;
+		});
+		this.lastTime = this.keyframes[this.keyframes.length - 1].time;
+
+		return this;
+	};
+
+	module.exports = AbstractTimelineChannel;
+
+/***/ },
+
+/***/ 509:
+/***/ function(module, exports, __webpack_require__) {
+
+	var AbstractTimelineChannel = __webpack_require__(508);
+
+	function EventChannel(id) {
+		AbstractTimelineChannel.call(this, id);
+
+		this.oldTime = 0;
+		this.callbackIndex = 0;
+	}
+
+	EventChannel.prototype = Object.create(AbstractTimelineChannel.prototype);
+	EventChannel.prototype.constructor = AbstractTimelineChannel;
+
+	/**
+	 * Add a callback to be called at a specific point in time
+	 * @param {string} id
+	 * @param {number} time
+	 * @param {Function} callback
+	 */
+	EventChannel.prototype.addCallback = function (id, time, callback) {
+		var newCallback = {
+			id: id,
+			time: time,
+			callback: callback
+		};
+		var keyframes = this.keyframes;
+		if (time > this.lastTime) {
+			keyframes.push(newCallback);
+			this.lastTime = time;
+		} else if (!keyframes.length || time < keyframes[0].time) {
+			keyframes.unshift(newCallback);
+		} else {
+			var index = this._find(keyframes, time) + 1;
+			keyframes.splice(index, 0, newCallback);
+		}
+
+		return this;
+	};
+
+	/**
+	 * Update the channel
+	 * @param time
+	 */
+	EventChannel.prototype.update = function (time) {
+		if (!this.enabled) { return this; }
+
+		var keyframes = this.keyframes;
+		if (!keyframes.length) { return this; }
+
+		// loop
+		if (time < this.oldTime) {
+			while (this.callbackIndex < keyframes.length) {
+				keyframes[this.callbackIndex].callback();
+				this.callbackIndex++;
+			}
+			this.callbackIndex = 0;
+		}
+
+		while (this.callbackIndex < keyframes.length && time >= keyframes[this.callbackIndex].time && time !== this.oldTime) {
+			keyframes[this.callbackIndex].callback();
+			this.callbackIndex++;
+		}
+
+		this.oldTime = time;
+
+		return this;
+	};
+
+	/**
+	 * No events need be fired when scrubbing the timeline
+	 * @private
+	 * @param time
+	 */
+	EventChannel.prototype.setTime = function (time) {
+		if (!this.enabled) { return this; }
+		if (!this.keyframes.length) { return this; }
+
+		if (time <= this.keyframes[0].time) {
+			this.callbackIndex = 0;
+		} else {
+			this.callbackIndex = this._find(this.keyframes, time) + 1;
+		}
+
+		this.oldTime = time;
+
+		return this;
+	};
+
+	module.exports = EventChannel;
+
+/***/ },
+
+/***/ 510:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Component = __webpack_require__(20);
+
+	/**
+	 * Timeline component
+	 * @example-link http://code.gooengine.com/latest/visual-test/goo/timelinepack/TimelineComponent/TimelineComponent-vtest.html Working example
+	 */
+	function TimelineComponent() {
+		Component.apply(this, arguments);
+
+		this.type = 'TimelineComponent';
+
+		this.channels = [];
+
+		/**
+		 * Current time, locally in this timeline.
+		 * @type {number}
+		 */
+		this.time = 0;
+
+		this.duration = 0;
+		this.loop = false;
+
+		this.playing = true;
+
+		/**
+		 * If set to true, the TimelineSystem will automatically run .start() on the component when the TimelineSystem starts.
+		 * @type {Boolean}
+		 */
+		this.autoStart = true;
+	}
+
+	TimelineComponent.prototype = Object.create(Component.prototype);
+	TimelineComponent.prototype.constructor = TimelineComponent;
+
+	/**
+	 * Adds a channel
+	 * @param {Channel} channel
+	 * @returns {TimelineComponent} Returns self to allow chaining
+	 */
+	TimelineComponent.prototype.addChannel = function (channel) {
+		this.channels.push(channel);
+		return this;
+	};
+
+	/**
+	 * Updates all channels with the time per last frame
+	 * @param {number} tpf
+	 */
+	TimelineComponent.prototype.update = function (tpf) {
+		if (!this.playing) {
+			return;
+		}
+
+		var time = this.time + tpf;
+		if (time > this.duration) {
+			if (this.loop) {
+				time %= this.duration;
+			} else {
+				time = this.duration;
+			}
+		}
+		if (time === this.time) {
+			return;
+		}
+		this.time = time;
+
+		for (var i = 0; i < this.channels.length; i++) {
+			var channel = this.channels[i];
+
+			channel.update(this.time);
+		}
+	};
+
+	/**
+	 * Resumes updating the entities
+	 */
+	TimelineComponent.prototype.start = function () {
+		this.playing = true;
+	};
+
+	/**
+	 * Resumes updating the entities; an alias for `.play`
+	 */
+	TimelineComponent.prototype.resume = TimelineComponent.prototype.start;
+
+	/**
+	 * Stops updating the entities
+	 */
+	TimelineComponent.prototype.pause = function () {
+		this.playing = false;
+	};
+
+
+	/**
+	 * Stop updating entities and resets the state machines to their initial state
+	 */
+	TimelineComponent.prototype.stop = function () {
+		this.playing = false;
+		this.setTime(0);
+	};
+
+	/**
+	 * Sets the time on all channels
+	 * @param {number} time
+	 */
+	TimelineComponent.prototype.setTime = function (time) {
+		this.time = time;
+
+		for (var i = 0; i < this.channels.length; i++) {
+			var channel = this.channels[i];
+
+			channel.setTime(this.time);
+		}
+
+		return this;
+	};
+
+	/**
+	 * Retrieves the values of all channels
+	 * @private
+	 * @returns {Object}
+	 */
+	TimelineComponent.prototype.getValues = function () {
+		var retVal = {};
+
+		for (var i = 0; i < this.channels.length; i++) {
+			var channel = this.channels[i];
+			if (typeof channel.value !== 'undefined' && channel.keyframes.length) {
+				retVal[channel.id] = channel.value;
+			}
+		}
+
+		return retVal;
+	};
+
+	module.exports = TimelineComponent;
+
+/***/ },
+
+/***/ 511:
+/***/ function(module, exports, __webpack_require__) {
+
+	var ComponentHandler = __webpack_require__(88);
+	var TimelineComponent = __webpack_require__(510);
+	var ValueChannel = __webpack_require__(512);
+	var EventChannel = __webpack_require__(509);
+	var ArrayUtils = __webpack_require__(86);
+	var SystemBus = __webpack_require__(44);
+	var ObjectUtils = __webpack_require__(6);
+	var Easing = __webpack_require__(173);
+
+	/**
+	 * @hidden
+	 */
+	function TimelineComponentHandler() {
+		ComponentHandler.apply(this, arguments);
+		this._type = 'TimelineComponent';
+	}
+
+	TimelineComponentHandler.prototype = Object.create(ComponentHandler.prototype);
+	TimelineComponentHandler.prototype.constructor = TimelineComponentHandler;
+	ComponentHandler._registerClass('timeline', TimelineComponentHandler);
+
+	TimelineComponentHandler.prototype._prepare = function (/*config*/) {};
+
+	TimelineComponentHandler.prototype._create = function () {
+		var component = new TimelineComponent();
+		return component;
+	};
+
+	TimelineComponentHandler.tweenMap = {
+		translationX: ValueChannel.getSimpleTransformTweener.bind(null, 'translation', 'x'),
+		translationY: ValueChannel.getSimpleTransformTweener.bind(null, 'translation', 'y'),
+		translationZ: ValueChannel.getSimpleTransformTweener.bind(null, 'translation', 'z'),
+		scaleX: ValueChannel.getSimpleTransformTweener.bind(null, 'scale', 'x'),
+		scaleY: ValueChannel.getSimpleTransformTweener.bind(null, 'scale', 'y'),
+		scaleZ: ValueChannel.getSimpleTransformTweener.bind(null, 'scale', 'z'),
+		rotationX: ValueChannel.getRotationTweener.bind(null, 0),
+		rotationY: ValueChannel.getRotationTweener.bind(null, 1),
+		rotationZ: ValueChannel.getRotationTweener.bind(null, 2)
+	};
+
+	function getEasingFunction(easingString) {
+		if (!easingString) {
+			return Easing.Linear.None;
+		}
+		var separator = easingString.indexOf('.');
+		var easingType = easingString.substr(0, separator);
+		var easingDirection = easingString.substr(separator + 1);
+		return Easing[easingType][easingDirection];
+	}
+
+	function updateValueChannelKeyframe(keyframeConfig, keyframeId, channel) {
+		var needsResorting = false;
+
+		var keyframe = ArrayUtils.find(channel.keyframes, function (keyframe) {
+			return keyframe.id === keyframeId;
+		});
+
+		var easingFunction = getEasingFunction(keyframeConfig.easing);
+
+		// create a new keyframe if it does not exist already or update it if it exists
+		if (!keyframe) {
+			channel.addKeyframe(
+				keyframeId,
+				keyframeConfig.time,
+				keyframeConfig.value,
+				easingFunction
+			);
+		} else {
+			// the time of one keyframe changed so we're not certain anymore that they're sorted
+			if (keyframe.time !== +keyframeConfig.time) {
+				needsResorting = true;
+			}
+			keyframe.time = +keyframeConfig.time;
+			keyframe.value = +keyframeConfig.value;
+			keyframe.easingFunction = easingFunction;
+		}
+
+		return {
+			needsResorting: needsResorting
+		};
+	}
+
+	function updateEventChannelKeyFrame(keyframeConfig, keyframeId, channel, channelConfig) {
+		var needsResorting = false;
+
+		var callbackEntry = ArrayUtils.find(channel.keyframes, function (callbackEntry) {
+			return callbackEntry.id === keyframeId;
+		});
+
+		// create the event emitter callback, we're gonna use it anyway
+		var eventEmitter = function () {
+			SystemBus.emit(channelConfig.eventName, keyframeConfig.value);
+		};
+
+		// create a new callback entry in the callback agenda if it does not exist already or update it if it exists
+		if (!callbackEntry) {
+			channel.addCallback(keyframeId, keyframeConfig.time, eventEmitter);
+		} else {
+			// the time of one keyframe changed so we're not certain anymore that they're sorted
+			if (callbackEntry.time !== +keyframeConfig.time) {
+				needsResorting = true;
+			}
+			callbackEntry.time = +keyframeConfig.time;
+			callbackEntry.callback = eventEmitter;
+		}
+
+		return {
+			needsResorting: needsResorting
+		};
+	}
+
+	function updateChannel(channelConfig, channelId, component, entityResolver, rotationMap) {
+		// search for existing one
+		var channel = ArrayUtils.find(component.channels, function (channel) {
+			return channel.id === channelId;
+		});
+
+		// and create one if needed
+		if (!channel) {
+			var key = channelConfig.propertyKey;
+			if (key) {
+				var entityId = channelConfig.entityId;
+				if (entityId && !rotationMap[entityId]) {
+					rotationMap[entityId] = [0, 0, 0];
+				}
+				var updateCallback =
+					TimelineComponentHandler.tweenMap[key](entityId, entityResolver, rotationMap[entityId]);
+
+				channel = new ValueChannel(channelId, {
+					callbackUpdate: updateCallback
+				});
+			} else {
+				channel = new EventChannel(channelId);
+			}
+			component.channels.push(channel);
+		} else if (channelConfig.entityId && channel.callbackUpdate && channel.callbackUpdate.rotation) {
+			var rotation = rotationMap[channelConfig.entityId] = channel.callbackUpdate.rotation;
+			rotation[0] = 0;
+			rotation[1] = 0;
+			rotation[2] = 0;
+		}
+
+		channel.enabled = channelConfig.enabled !== false;
+
+		// remove existing keyframes in the channel that are not mentioned in the config anymore
+		// filter preserves the order, otherwise the channel would fail to work
+		// the keyframes need always be sorted by their time property
+		channel.keyframes = channel.keyframes.filter(function (keyframe) {
+			return !!channelConfig.keyframes[keyframe.id];
+		});
+
+		var needsResorting = false;
+
+		if (channelConfig.propertyKey) {
+			for (var keyframeId in channelConfig.keyframes) {
+				var keyframeConfig = channelConfig.keyframes[keyframeId];
+				var updateResult = updateValueChannelKeyframe(keyframeConfig, keyframeId, channel, channelConfig);
+				needsResorting = needsResorting || updateResult.needsResorting;
+			}
+		} else {
+			for (var keyframeId in channelConfig.keyframes) {
+				var keyframeConfig = channelConfig.keyframes[keyframeId];
+				var updateResult = updateEventChannelKeyFrame(keyframeConfig, keyframeId, channel, channelConfig);
+				needsResorting = needsResorting || updateResult.needsResorting;
+			}
+		}
+
+		// !AT: if time was changed for any keyframe then the whole channel might not work as expected
+		// could make this even faster but let's not go that far
+		if (needsResorting) {
+			channel.sort();
+		}
+	}
+
+	TimelineComponentHandler.prototype.update = function (entity, config, options) {
+		var that = this;
+		return ComponentHandler.prototype.update.call(this, entity, config, options).then(function (component) {
+			if (!component) { return; }
+
+			if (!isNaN(config.duration)) {
+				component.duration = +config.duration;
+			}
+			component.loop = (config.loop.enabled === true);
+
+			component.autoStart = (config.autoStart !== undefined ? config.autoStart : true);
+			if (component.autoStart) {
+				component.start();
+			} else {
+				component.stop();
+			}
+
+			// remove existing channels in the component that are not mentioned in the config anymore
+			component.channels = component.channels.filter(function (channel) {
+				return !!config.channels[channel.id];
+			});
+
+			var entityResolver = function (entityId) {
+				return that.world.entityManager.getEntityById(entityId);
+			};
+			var rotationMap = {};
+
+			ObjectUtils.forEach(config.channels, function (channelConfig) {
+				updateChannel(channelConfig, channelConfig.id, component, entityResolver, rotationMap);
+			}, null, 'sortValue');
+
+			return component;
+		});
+	};
+
+	module.exports = TimelineComponentHandler;
+
+/***/ },
+
+/***/ 512:
+/***/ function(module, exports, __webpack_require__) {
+
+	var AbstractTimelineChannel = __webpack_require__(508);
+	var MathUtils = __webpack_require__(9);
+
+	function ValueChannel(id, options) {
+		AbstractTimelineChannel.call(this, id);
+
+		this.value = 0;
+
+		options = options || {};
+		this.callbackUpdate = options.callbackUpdate;
+		this.callbackEnd = options.callbackEnd;
+	}
+
+	ValueChannel.prototype = Object.create(AbstractTimelineChannel.prototype);
+	ValueChannel.prototype.constructor = ValueChannel;
+
+	/**
+	 * Schedules a tween
+	 * @param id
+	 * @param time Start time
+	 * @param value
+	 * @param {function (number)} easingFunction
+	 */
+	ValueChannel.prototype.addKeyframe = function (id, time, value, easingFunction) {
+		var newKeyframe = {
+			id: id,
+			time: time,
+			value: value,
+			easingFunction: easingFunction
+		};
+
+		if (time > this.lastTime) {
+			this.keyframes.push(newKeyframe);
+			this.lastTime = time;
+		} else if (!this.keyframes.length || time < this.keyframes[0].time) {
+			this.keyframes.unshift(newKeyframe);
+		} else {
+			var index = this._find(this.keyframes, time) + 1;
+			this.keyframes.splice(index, 0, newKeyframe);
+		}
+
+		return this;
+	};
+
+	/**
+	 * Update the channel to a given time.
+	 * @param time
+	 */
+	ValueChannel.prototype.update = function (time) {
+		if (!this.enabled) { return this.value; }
+		if (!this.keyframes.length) { return this.value; }
+
+		var newValue;
+		var newEntryIndex;
+		if (time <= this.keyframes[0].time) {
+			newValue = this.keyframes[0].value;
+		} else if (time >= this.keyframes[this.keyframes.length - 1].time) {
+			newValue = this.keyframes[this.keyframes.length - 1].value;
+		} else {
+			newEntryIndex = this._find(this.keyframes, time);
+			var newEntry = this.keyframes[newEntryIndex];
+			var nextEntry = this.keyframes[newEntryIndex + 1];
+
+			var progressInEntry = (time - newEntry.time) / (nextEntry.time - newEntry.time);
+			var progressValue = newEntry.easingFunction(progressInEntry);
+
+			newValue = MathUtils.lerp(progressValue, newEntry.value, nextEntry.value);
+		}
+
+		//! AT: comparing floats with === is ok here
+		// if (this.value !== newValue || true) { // overriding for now to get time progression
+		//! AT: not sure if create people want this all the time or not
+		this.value = newValue;
+		this.callbackUpdate(time, this.value, newEntryIndex);
+		// }
+
+		return this;
+	};
+
+	ValueChannel.prototype.setTime = ValueChannel.prototype.update;
+
+	// tween factories
+	ValueChannel.getSimpleTransformTweener = function (type, vectorComponent, entityId, resolver) {
+		var entity;
+		return function (time, value) {
+			if (!entity) { entity = resolver(entityId); }
+
+			//
+			// REVIEW:
+			// what about a guard instead?
+			// if (!entity) { return; }
+			// I used to be pro-guard as it reduces indentation, but is it easier to read..?
+			//
+
+			//! AT: this prevents the timeline from blowing up if the entity is absent
+			// it's a temporary fix in the engine until the issue is patched in create
+			// https://trello.com/c/cj8XQnUz/1588-normal-user-can-t-import-prefabs-with-timelines-if-not-all-animated-objects-are-in-the-prefab
+			if (entity) {
+				entity.transformComponent.transform[type][vectorComponent] = value;
+				entity.transformComponent.setUpdated();
+			}
+		};
+	};
+
+	ValueChannel.getRotationTweener = function (angleIndex, entityId, resolver, rotation) {
+		var entity;
+		var func = function (time, value) {
+			if (!entity) { entity = resolver(entityId); }
+			//! AT: same here as above; a tmp fix
+			if (entity) {
+				var rotation = func.rotation;
+				rotation[angleIndex] = value * MathUtils.DEG_TO_RAD;
+				entity.transformComponent.transform.rotation.fromAngles(rotation[0], rotation[1], rotation[2]);
+				entity.transformComponent.setUpdated();
+			}
+		};
+		func.rotation = rotation;
+		return func;
+	};
+
+	module.exports = ValueChannel;
+
+
+/***/ },
+
+/***/ 513:
+/***/ function(module, exports, __webpack_require__) {
+
+	var System = __webpack_require__(42);
+
+	/**
+	 * Manages entities with a TimelineComponent
+	 * @example-link http://code.gooengine.com/latest/visual-test/goo/timelinepack/TimelineComponent/TimelineComponent-vtest.html Working example
+	 */
+	function TimelineSystem() {
+		System.call(this, 'TimelineSystem', ['TimelineComponent']);
+	}
+
+	TimelineSystem.prototype = Object.create(System.prototype);
+	TimelineSystem.prototype.constructor = TimelineSystem;
+
+	TimelineSystem.prototype.process = function (entities, tpf) {
+		for (var i = 0; i < this._activeEntities.length; i++) {
+			var entity = this._activeEntities[i];
+
+			entity.timelineComponent.update(tpf);
+		}
+	};
+
+	/**
+	 * Resumes updating the entities
+	 */
+	TimelineSystem.prototype.play = function () {
+		this.passive = false;
+		var entities = this._activeEntities;
+		for (var i = 0; i < entities.length; i++) {
+			var component = entities[i].timelineComponent;
+			if (component.autoStart) {
+				component.start();
+			}
+		}
+	};
+
+	/**
+	 * Stops updating the entities
+	 */
+	TimelineSystem.prototype.pause = function () {
+		this.passive = true;
+		var entities = this._activeEntities;
+		for (var i = 0; i < entities.length; i++) {
+			var component = entities[i].timelineComponent;
+			component.pause();
+		}
+	};
+
+	/**
+	 * Resumes updating the entities; an alias for `.play`
+	 */
+	TimelineSystem.prototype.resume = TimelineSystem.prototype.play;
+
+	/**
+	 * Stop updating entities and resets the state machines to their initial state
+	 */
+	TimelineSystem.prototype.stop = function () {
+		this.passive = true;
+		var entities = this._activeEntities;
+		for (var i = 0; i < entities.length; i++) {
+			var component = entities[i].timelineComponent;
+			component.stop();
+		}
+	};
+
+	module.exports = TimelineSystem;
+
+/***/ }
+
+});

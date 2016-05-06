@@ -1,2 +1,4164 @@
-webpackJsonp([17],{0:function(a,b,c){a.exports=c(476)},476:function(a,b,c){if(a.exports={AxisAlignedCamControlScript:c(477),BasicControlScript:c(478),ButtonScript:c(479),CannonPickScript:c(480),FlyControlScript:c(481),GroundBoundMovementScript:c(484),HeightMapBoundingScript:c(485),LensFlareScript:c(486),MouseLookControlScript:c(483),OrbitNPanControlScript:c(487),PanCamScript:c(488),PickAndRotateScript:c(489),PolyBoundingScript:c(490),RotationScript:c(491),ScriptComponentHandler:c(492),ScriptHandler:c(493),ScriptHandlers:c(494),ScriptRegister:c(495),SparseHeightMapBoundingScript:c(496),WasdControlScript:c(482),WorldFittedTerrainScript:c(497)},"undefined"!=typeof window)for(var d in a.exports)window.goo[d]=a.exports[d]},477:function(a,b,c){function d(){function a(a,c){c.axis=e.UNIT_Z.clone(),c.upAxis=e.UNIT_Y.clone(),b(a,c,a.view),c.currentView=a.view,c.lookAtPoint=new e,c.distance=a.distance,c.smoothness=Math.pow(f.clamp(a.smoothness,0,1),.3),c.axisAlignedDirty=!0}function b(a,b,c){if(b.currentView!==c){switch(b.currentView=c,c){case"XY":b.axis.set(e.UNIT_Z),b.upAxis.set(e.UNIT_Y);break;case"ZY":b.axis.set(e.UNIT_X),b.upAxis.set(e.UNIT_Y)}b.axisAlignedDirty=!0}}function c(a,b){if(a.view!==b.currentView&&(b.axisAlignedDirty=!0),b.axisAlignedDirty){var c=b.entity,d=c.transformComponent.transform;d.translation.set(b.axis).scale(b.distance).add(b.lookAtPoint),d.lookAt(b.lookAtPoint,b.upAxis),c.transformComponent.setUpdated(),b.axisAlignedDirty=!1}}function d(){}return{setup:a,update:c,cleanup:d}}var e=c(8),f=c(9);d.externals={key:"AxisAlignedCamControlScript",name:"Axis-aligned Camera Control",description:"Aligns a camera along an axis, and enables switching between them.",parameters:[{key:"whenUsed",name:"When Camera Used",description:"Script only runs when the camera to which it is added is being used.","default":!0,type:"boolean"},{key:"distance",name:"Distance",type:"float",description:"Camera distance from lookat point",control:"slider","default":1,min:1,max:1e3},{key:"view",type:"string","default":"XY",control:"select",options:["XY","ZY"]}]},a.exports=d},478:function(a,b,c){function d(a){a=a||{},this.domElement=void 0===a.domElement?null:a.domElement.domElement||a.domElement,this.name="BasicControlScript",this.movementSpeed=10,this.rollSpeed=2,this.movementSpeedMultiplier=1,this.mouseStatus=0,this.moveState={up:0,down:0,left:0,right:0,forward:0,back:0,pitchUp:0,pitchDown:0,yawLeft:0,yawRight:0,rollLeft:0,rollRight:0},this.moveVector=new e(0,0,0),this.rotationVector=new e(0,0,0),this.multiplier=new e(1,1,1),this.rotationMatrix=new f,this.tmpVec=new e,this.handleEvent=function(a){"function"==typeof this[a.type]&&this[a.type](a)},this.keydown=function(a){if(!a.altKey){switch(a.keyCode){case 16:this.movementSpeedMultiplier=.1;break;case 87:this.moveState.forward=1;break;case 83:this.moveState.back=1;break;case 65:this.moveState.left=1;break;case 68:this.moveState.right=1;break;case 82:this.moveState.up=1;break;case 70:this.moveState.down=1;break;case 38:this.moveState.pitchUp=1;break;case 40:this.moveState.pitchDown=1;break;case 37:this.moveState.yawLeft=1;break;case 39:this.moveState.yawRight=1;break;case 81:this.moveState.rollLeft=1;break;case 69:this.moveState.rollRight=1}this.updateMovementVector(),this.updateRotationVector()}},this.keyup=function(a){switch(a.keyCode){case 16:this.movementSpeedMultiplier=1;break;case 87:this.moveState.forward=0;break;case 83:this.moveState.back=0;break;case 65:this.moveState.left=0;break;case 68:this.moveState.right=0;break;case 82:this.moveState.up=0;break;case 70:this.moveState.down=0;break;case 38:this.moveState.pitchUp=0;break;case 40:this.moveState.pitchDown=0;break;case 37:this.moveState.yawLeft=0;break;case 39:this.moveState.yawRight=0;break;case 81:this.moveState.rollLeft=0;break;case 69:this.moveState.rollRight=0}this.updateMovementVector(),this.updateRotationVector()},this.mousedown=function(a){this.domElement!==document&&this.domElement.focus(),a.preventDefault(),a=a.touches&&1===a.touches.length?a.touches[0]:a,this.mouseDownX=a.pageX,this.mouseDownY=a.pageY,this.mouseStatus=1,document.addEventListener("mousemove",this.mousemove,!1),document.addEventListener("mouseup",this.mouseup,!1),document.addEventListener("touchmove",this.mousemove,!1),document.addEventListener("touchend",this.mouseup,!1)}.bind(this),this.mousemove=function(a){this.mouseStatus>0&&(a=a.touches&&1===a.touches.length?a.touches[0]:a,this.moveState.yawLeft=a.pageX-this.mouseDownX,this.moveState.pitchDown=a.pageY-this.mouseDownY,this.updateRotationVector(),this.mouseDownX=a.pageX,this.mouseDownY=a.pageY)}.bind(this),this.mouseup=function(a){this.mouseStatus&&(a.preventDefault(),this.mouseStatus=0,this.moveState.yawLeft=this.moveState.pitchDown=0,this.updateRotationVector(),document.removeEventListener("mousemove",this.mousemove),document.removeEventListener("mouseup",this.mouseup),document.removeEventListener("touchmove",this.mousemove),document.removeEventListener("touchend",this.mouseup))}.bind(this),this.updateMovementVector=function(){var a=this.moveState.forward||this.autoForward&&!this.moveState.back?1:0;this.moveVector.x=-this.moveState.left+this.moveState.right,this.moveVector.y=-this.moveState.down+this.moveState.up,this.moveVector.z=-a+this.moveState.back},this.updateRotationVector=function(){this.rotationVector.x=-this.moveState.pitchDown+this.moveState.pitchUp,this.rotationVector.y=-this.moveState.yawRight+this.moveState.yawLeft,this.rotationVector.z=-this.moveState.rollRight+this.moveState.rollLeft},this.getContainerDimensions=function(){return this.domElement!==document?{size:[this.domElement.offsetWidth,this.domElement.offsetHeight],offset:[this.domElement.offsetLeft,this.domElement.offsetTop]}:{size:[window.innerWidth,window.innerHeight],offset:[0,0]}},this.domElement&&this.setupMouseControls(),this.updateMovementVector(),this.updateRotationVector()}var e=c(8),f=c(24);d.prototype.setupMouseControls=function(){this.domElement.setAttribute("tabindex",-1),this.domElement.addEventListener("mousedown",this.mousedown,!1),this.domElement.addEventListener("touchstart",this.mousedown,!1),this.domElement.addEventListener("keydown",this.keydown.bind(this),!1),this.domElement.addEventListener("keyup",this.keyup.bind(this),!1)},d.prototype.externals=function(){return[{variable:"movementSpeed",type:"number"},{variable:"rollSpeed",type:"number"}]},d.prototype.run=function(a,b,c){c&&!this.domElement&&c.domElement&&(this.domElement=c.domElement,this.setupMouseControls());var d=a.transformComponent,f=d.transform,g=a._world.tpf,h=g*this.movementSpeed*this.movementSpeedMultiplier,i=g*this.rollSpeed*this.movementSpeedMultiplier;(!this.moveVector.equals(e.ZERO)||!this.rotationVector.equals(e.ZERO)||this.mouseStatus>0)&&(f.translation.x+=this.moveVector.x*h,f.translation.y+=this.moveVector.y*h,f.translation.z+=this.moveVector.z*h,this.tmpVec.x+=-this.rotationVector.x*i*this.multiplier.x,this.tmpVec.y+=this.rotationVector.y*i*this.multiplier.y,this.tmpVec.z+=this.rotationVector.z*i*this.multiplier.z,f.rotation.fromAngles(this.tmpVec.x,this.tmpVec.y,this.tmpVec.z),this.mouseStatus>0&&(this.moveState.yawLeft=0,this.moveState.pitchDown=0,this.updateRotationVector()),d.setUpdated())},a.exports=d},479:function(a,b,c){function d(){function a(a,c){c.button=["Any","Left","Middle","Right"].indexOf(a.button)-1,c.button<-1&&(c.button=-1),c.renderToPickHandler=function(){c.skipUpdateBuffer=!0},e.addListener("ButtonScript.renderToPick",c.renderToPickHandler,!1),c.mouseState={x:0,y:0,down:!1,downOnEntity:!1,overEntity:!1},c.listeners={mousedown:function(d){if(a.whenUsed){var e=f(d);(e===c.button||-1===c.button)&&(c.mouseState.down=!0,b(a,c,d),g(a,c,"mousedown"))}},mouseup:function(d){if(a.whenUsed){var e=f(d);(e===c.button||-1===c.button)&&(c.mouseState.down=!1,b(a,c,d),c.mouseState.downOnEntity&&g(a,c,"click"),g(a,c,"mouseup"))}},dblclick:function(d){if(a.whenUsed){var e=f(d);(e===c.button||-1===c.button)&&(c.mouseState.down=!1,b(a,c,d),g(a,c,"dblclick"))}},mousemove:function(d){a.whenUsed&&a.enableOnMouseMove&&(c.mouseState.down=!1,b(a,c,d),g(a,c,"mousemove"))},touchstart:function(b){if(a.whenUsed){c.mouseState.down=!0;var d=b.targetTouches,e=c.domElement.getBoundingClientRect();c.mouseState.x=d[0].pageX-e.left,c.mouseState.y=d[0].pageY-e.top,g(a,c,"touchstart")}},touchend:function(b){a.whenUsed&&(b.preventDefault(),b.stopPropagation(),c.mouseState.down=!1,g(a,c,"touchend"))}};for(var d in c.listeners)c.domElement.addEventListener(d,c.listeners[d])}function b(a,b,c){var d=b.domElement.getBoundingClientRect();b.mouseState.x=c.pageX-d.left,b.mouseState.y=c.pageY-d.top}function c(a,b){b.skipUpdateBuffer=!1}function d(a,b){for(var c in b.listeners)b.domElement.removeEventListener(c,b.listeners[c]);e.removeListener("ButtonScript.renderToPick",b.renderToPickHandler)}function f(a){var b=a.button;return 0===b&&(a.altKey?b=2:a.shiftKey&&(b=1)),b}function g(a,b,c){var d=b.entity._world.gooRunner,f=d.pickSync(b.mouseState.x,b.mouseState.y,b.skipUpdateBuffer);b.skipUpdateBuffer||e.emit("ButtonScript.renderToPick");var g=d.world.entityManager.getEntityByIndex(f.id);b.mouseState.downOnEntity=!1,g===b.entity&&(e.emit(a.channel+"."+c,{type:c,entity:g}),("mousedown"===c||"touchstart"===c)&&(b.mouseState.downOnEntity=!0),!a.linkUrl||"click"!==c&&"touchend"!==c||window.open(a.linkUrl,a.linkTarget)),"mousemove"!==c||b.mouseState.overEntity||g!==b.entity||e.emit(a.channel+".mouseover",{type:"mouseover",entity:g}),"mousemove"===c&&b.mouseState.overEntity&&g!==b.entity&&e.emit(a.channel+".mouseout",{type:"mouseout",entity:g}),b.mouseState.overEntity=g===b.entity}return{setup:a,update:c,cleanup:d}}var e=c(44);d.externals={key:"ButtonScript",name:"Button",description:"Enables an entity to be interacted with using click or touch.",parameters:[{key:"whenUsed",type:"boolean","default":!0},{key:"button",name:"button",description:"Only interact with this mouse button.",type:"string",control:"select","default":"Any",options:["Any","Left","Middle","Right"]},{key:"linkUrl",name:"linkUrl",description:"URL to open when clicking the entity. Leave this field empty to disable.",type:"string","default":""},{key:"linkTarget",name:"linkTarget",description:"The window to open the link in.",type:"string","default":"_blank"},{key:"channel",name:"channel",description:"Event channel to emit to. Will emit channel.click, .mousedown, .mouseup, .mouseover, .mouseout, .dblclick, .touchstart, .touchend",type:"string","default":"button"},{key:"enableOnMouseMove",name:"enableOnMouseMove",description:"Enables .mousemove, .mouseover, and .mouseout events. For larger scenes, this might be worth turning off, for better performance.",type:"boolean","default":!0}]},a.exports=d},480:function(a,b,c){function d(){function a(a){var b=a[0].clientX,c=a[0].clientY,d=a[1].clientX,e=a[1].clientY,f=(b+d)/2,g=(c+e)/2;return[f,g]}function b(b,c){k=["Any","Left","Middle","Right"].indexOf(b.pickButton)-1,-1>k&&(k=-1),m=c.world.getSystem("CannonSystem");var d=new CANNON.Sphere(.1),e=c.jointBody=new CANNON.RigidBody(0,d);e.collisionFilterGroup=2,e.collisionFilterMask=2,m.world.add(e),l={x:0,y:0,ox:0,oy:0,dx:0,dy:0,down:!1};var f=c.listeners={mousedown:function(a){if(!b.whenUsed||c.entity===c.activeCameraEntity){var d=a.button;0===d&&(a.altKey?d=2:a.shiftKey&&(d=1)),(d===k||-1===k)&&(l.down=!0,l.ox=l.x=a.clientX,l.oy=l.y=a.clientY)}},mouseup:function(a){var b=a.button;0===b&&(a.altKey?b=2:a.shiftKey&&(b=1)),(b===k||-1===k)&&(l.down=!1,l.dx=l.dy=0)},mousemove:function(a){b.whenUsed&&c.entity!==c.activeCameraEntity||l.down&&(l.x=a.clientX,l.y=a.clientY,c.dirty=!0)},mouseleave:function(){l.down=!1,l.ox=l.x,l.oy=l.y},touchstart:function(d){if(!b.whenUsed||c.entity===c.activeCameraEntity){if(l.down=2===d.targetTouches.length,!l.down)return;var e=a(d.targetTouches);l.ox=l.x=e[0],l.oy=l.y=e[1]}},touchmove:function(d){if(!b.whenUsed||c.entity===c.activeCameraEntity){if(!l.down)return;var e=a(d.targetTouches);l.x=e[0],l.y=e[1]}},touchend:function(){l.down=!1,l.ox=l.x,l.oy=l.y}};for(var g in f)c.domElement.addEventListener(g,f[g]);c.dirty=!0}function c(a,b){l.dx=l.x-l.ox,l.dy=l.y-l.oy,l.ox=l.x,l.oy=l.y;var c=f.mainCamera;if(c&&l.down&&!b.mouseConstraint){for(var d=[],g=b.world.by.system("CannonSystem").toArray(),k=0;k<g.length;k++){var m=g[k].cannonRigidbodyComponent.body;m&&m.shape instanceof CANNON.Box&&m.motionstate===CANNON.Body.DYNAMIC&&d.push(m)}var o=c.getPickRay(l.x,l.y,window.innerWidth,window.innerHeight),p=new CANNON.Vec3(o.origin.x,o.origin.y,o.origin.z),q=new CANNON.Vec3(o.direction.x,o.direction.y,o.direction.z),r=new CANNON.Ray(p,q),s=r.intersectBodies(d);if(s.length){var m=s[0].body,t=s[0].point;h(a,b,t.x,t.y,t.z,m,o.direction.scale(-1))}}else if(c&&l.down&&b.mouseConstraint&&(0!==l.dx||0!==l.dy)){var c=f.mainCamera,o=c.getPickRay(l.x,l.y,window.innerWidth,window.innerHeight),u=new e;n.rayIntersect(o,u,!0),i(a,b,u)}else l.down||j(a,b)}function d(a,b){for(var c in b.listeners)b.domElement.removeEventListener(c,b.listeners[c])}function h(a,b,c,d,f,g,h){b.constrainedBody=g;var i=new CANNON.Vec3(c,d,f).vsub(b.constrainedBody.position),j=b.constrainedBody.quaternion.inverse(),k=j.vmult(i);b.jointBody.position.set(c,d,f),b.mouseConstraint=new CANNON.PointToPointConstraint(b.constrainedBody,k,b.jointBody,new CANNON.Vec3(0,0,0)),m.world.addConstraint(b.mouseConstraint);var l=new e(c,d,f);n.constant=l.dot(h),n.normal.set(h)}function i(a,b,c){b.jointBody.position.set(c.x,c.y,c.z),b.mouseConstraint.update()}function j(a,b){m.world.removeConstraint(b.mouseConstraint),b.mouseConstraint=!1}var k,l,m,n=new g;return{setup:b,update:c,cleanup:d}}var e=c(8),f=c(123),g=c(121);d.externals={key:"CannonPickScript",name:"Cannon.js Body Pick",description:"Enables the user to physically pick a Cannon.js physics body and drag it around.",parameters:[{key:"whenUsed",type:"boolean","default":!0},{key:"pickButton",name:"Pan button",description:"Pick with this button",type:"string",control:"select","default":"Any",options:["Any","Left","Middle","Right"]},{key:"useForceNormal",name:"Use force normal",type:"boolean","default":!1},{key:"forceNormal",name:"Force normal","default":[0,0,1],type:"vec3"}]},a.exports=d},481:function(a,b,c){function d(){function a(a,b){h.setup(a,b),d.setup(a,b)}function b(a,b){h.update(a,b),d.update(a,b)}function c(a,b){h.cleanup(a,b),d.cleanup(a,b)}var d=e.create(f),h=e.create(g);return{setup:a,cleanup:c,update:b}}var e=c(4),f=c(482),g=c(483),h=f.externals.parameters,i=g.externals.parameters,j=h.concat(i.slice(1));d.externals={key:"FlyControlScript",name:"Fly Control",description:"This is a combo of the Wasd script and the MouseLook script",parameters:j},a.exports=d},482:function(a,b,c){function d(){function a(){s.x=o.strafeLeft-o.strafeRight,s.z=o.forward-o.back}function b(b){if(!b.altKey)switch(f.keyForCode(b.keyCode)){case n.crawlKey:o.crawling=!0;break;case n.forwardKey:o.forward=1,a();break;case n.backKey:o.back=1,a();break;case n.strafeLeftKey:o.strafeLeft=1,a();break;case n.strafeRightKey:o.strafeRight=1,a()}}function c(b){if(!b.altKey)switch(f.keyForCode(b.keyCode)){case n.crawlKey:o.crawling=!1;break;case n.forwardKey:o.forward=0,a();break;case n.backKey:o.back=0,a();break;case n.strafeLeftKey:o.strafeLeft=0,a();break;case n.strafeRightKey:o.strafeRight=0,a()}}function d(a){a.setAttribute("tabindex",-1),a.addEventListener("keydown",b,!1),a.addEventListener("keyup",c,!1)}function g(a,b){n=a,b.moveState=o={strafeLeft:0,strafeRight:0,forward:0,back:0,crawling:!1},k=b.entity,l=k.transformComponent,m=l.transform,u.copy(m.translation),d(b.domElement)}function h(a,b){if((p||!s.equals(e.ZERO))&&(p||!a.whenUsed||b.entity===b.activeCameraEntity)){p=!1,t.setDirect(q.x*s.z+r.x*s.x,q.y*s.z+r.y*s.x,q.z*s.z+r.z*s.x),t.normalize();var c=b.world.tpf*(o.crawling?a.crawlSpeed:a.walkSpeed);t.scale(c);var d=m.rotation;t.applyPost(d),u.add(t),m.translation.copy(u),l.setUpdated()}}function i(a,d){d.domElement.removeEventListener("keydown",b,!1),d.domElement.removeEventListener("keyup",c,!1)}function j(){p=!0}var k,l,m,n,o,p=!1,q=new e(0,0,-1),r=new e(-1,0,0),s=new e,t=new e,u=new e;return{setup:g,update:h,cleanup:i,argsUpdated:j}}var e=c(8),f=c(5);d.externals={key:"WASD",name:"WASD Control",description:"Enables moving via the WASD keys",parameters:[{key:"whenUsed",type:"boolean",name:"When Camera Used",description:"Script only runs when the camera to which it is added is being used.","default":!0},{key:"crawlKey",type:"string",control:"key","default":"Shift"},{key:"forwardKey",type:"string",control:"key","default":"W"},{key:"backKey",type:"string",control:"key","default":"S"},{key:"strafeLeftKey",type:"string",control:"key","default":"A"},{key:"strafeRightKey",type:"string",control:"key","default":"D"},{key:"walkSpeed",type:"int",control:"slider","default":10,min:1,max:100,exponential:!0},{key:"crawlSpeed",control:"slider",type:"int","default":1,min:.1,max:10,exponential:!0}]},a.exports=d},483:function(a,b,c){function d(){function a(a){r.whenUsed&&q.entity!==q.activeCameraEntity||(-1===p||a.button===p||3===p&&!v)&&(t=!0,w=y=a.clientX,x=z=a.clientY)}function b(){u||g.requestPointerLock()}function c(a){u||r.whenUsed&&q.entity!==q.activeCameraEntity||(u&&void 0!==a.movementX?(y+=a.movementX,z+=a.movementY):t&&(y=a.clientX,z=a.clientY))}function d(a){r.whenUsed&&q.entity!==q.activeCameraEntity||u&&void 0!==a.movementX&&(y+=a.movementX,z+=a.movementY)}function i(){t=!1}function j(){u&&(t=!1)}function k(){u=!!document.pointerLockElement,document.pointerLockElement?(q.domElement.removeEventListener("mousedown",b),v=!0):q.domElement.addEventListener("mousedown",b)}function l(f,l){q=l,r=f,p=h.indexOf(f.button)-1,-1>p&&(p=-1);var m=l.domElement;3===p&&(document.addEventListener("pointerlockchange",k),g.requestPointerLock(),document.addEventListener("mousemove",d),document.addEventListener("mousemove",j),m.addEventListener("mousedown",b)),m.addEventListener("mousemove",c),m.addEventListener("mousedown",a),m.addEventListener("mouseup",i),o=new e;var n=l.entity.transformComponent.transform.rotation;n.toAngles(o),s=o.y}function m(a,b){if(y!==w||z!==x){var c=y-w,d=z-x,e=b.entity,g=e.transformComponent.transform.rotation;g.toAngles(o);var h=o.x,i=o.y,j=a.maxAscent*f.DEG_TO_RAD,k=a.minAscent*f.DEG_TO_RAD;h=f.clamp(h-d*a.speed/200,k,j);var l=a.maxAzimuth*f.DEG_TO_RAD-s,m=a.minAzimuth*f.DEG_TO_RAD-s;i-=c*a.speed/200,a.clampAzimuth&&(i=f.radialClamp(i,m,l)),g.fromAngles(h,i,0),e.transformComponent.setUpdated(),w=y,x=z}}function n(e,f){var h=f.domElement;3===p&&(g.exitPointerLock(),document.removeEventListener("mousemove",d),document.removeEventListener("pointerlockchange",k),h.removeEventListener("mousedown",b)),h.removeEventListener("mousemove",c),h.removeEventListener("mousedown",a),h.removeEventListener("mouseup",i)}var o,p,q,r,s,t=!1,u=!1,v=!1,w=0,x=0,y=0,z=0;return{setup:l,update:m,cleanup:n}}var e=c(8),f=c(9),g=c(221),h=["Any","Left","Middle","Right","None"];d.externals={key:"MouseLookScript",name:"Mouse Look Control",description:"Click and drag to change rotation of entity, usually a camera",parameters:[{key:"whenUsed",type:"boolean",name:"When Camera Used",description:"Script only runs when the camera to which it is added is being used.","default":!0},{key:"button",name:"Mouse button",type:"string",control:"select","default":"Left",options:h},{key:"speed",name:"Turn Speed",type:"float",control:"slider","default":1,min:-10,max:10,scale:.1},{key:"maxAscent",name:"Max Ascent",type:"float",control:"slider","default":89.95,min:-89.95,max:89.95},{key:"minAscent",name:"Min Ascent",type:"float",control:"slider","default":-89.95,min:-89.95,max:89.95},{key:"clampAzimuth","default":!1,type:"boolean"},{key:"minAzimuth",description:"Maximum arc the camera can reach clockwise of the target point","default":-90,type:"int",control:"slider",min:-180,max:0},{key:"maxAzimuth",description:"Maximum arc the camera can reach counter-clockwise of the target point","default":90,type:"int",control:"slider",min:0,max:180}]},a.exports=d},484:function(a,b,c){function d(a){a=a||{};for(var b in g)"boolean"==typeof g[b]?this[b]=void 0!==a[b]?a[b]===!0:g[b]:isNaN(g[b])?g[b]instanceof e?this[b]=a[b]?new e(a[b]):(new e).set(g[b]):this[b]=a[b]||g[b]:this[b]=isNaN(a[b])?g[b]:a[b];this.groundContact=1,this.targetVelocity=new e,this.targetHeading=new e,this.acceleration=new e,this.torque=new e,this.groundHeight=0,this.groundNormal=new e,this.controlState={run:0,strafe:0,jump:0,yaw:0,roll:0,pitch:0}}var e=c(8),f=new e,g={gravity:-9.81,worldFloor:-(1/0),jumpImpulse:95,accLerp:.1,rotLerp:.1,modForward:1,modStrafe:.7,modBack:.4,modTurn:.3};d.prototype.setTerrainSystem=function(a){this.terrainScript=a},d.prototype.getTerrainSystem=function(){return this.terrainScript},d.prototype.getTerrainHeight=function(a){var b=this.getTerrainSystem().getTerrainHeightAt(a);return null===b&&(b=this.worldFloor),b},d.prototype.getTerrainNormal=function(a){return this.getTerrainSystem().getTerrainNormalAt(a)},d.prototype.applyForward=function(a){this.controlState.run=a},d.prototype.applyStrafe=function(a){this.controlState.strafe=a},d.prototype.applyJump=function(a){this.controlState.jump=a},d.prototype.applyTurn=function(a){this.controlState.yaw=a},d.prototype.applyJumpImpulse=function(a){return this.groundContact&&(this.controlState.jump?(a=this.jumpImpulse,this.controlState.jump=0):a=0),a},d.prototype.applyDirectionalModulation=function(a,b,c){a*=this.modStrafe,c*=c>0?this.modForward:this.modBack,this.targetVelocity.setDirect(a,this.applyJumpImpulse(b),c)},d.prototype.applyTorqueModulation=function(a,b,c){this.targetHeading.setDirect(a,b*this.modTurn,c)},d.prototype.applyGroundNormalInfluence=function(){var a=Math.abs(Math.cos(this.groundNormal.x)),b=Math.abs(Math.cos(this.groundNormal.z));this.targetVelocity.x*=a,this.targetVelocity.z*=b},d.prototype.updateTargetVectors=function(a){this.applyDirectionalModulation(this.controlState.strafe,this.gravity,this.controlState.run),this.targetVelocity.applyPost(a.rotation),this.applyGroundNormalInfluence(),this.applyTorqueModulation(this.controlState.pitch,this.controlState.yaw,this.controlState.roll)},d.prototype.computeAcceleration=function(a,b,c){return f.set(c),f.applyPost(a.transformComponent.transform.rotation),f.sub(b),f.lerp(c,this.accLerp),f.y=c.y,f},d.prototype.computeTorque=function(a,b){return f.set(b),f.sub(a),f.lerp(b,this.rotLerp),f},d.prototype.updateVelocities=function(a){var b=a.movementComponent.getVelocity(),c=a.movementComponent.getRotationVelocity();this.acceleration.set(this.computeAcceleration(a,b,this.targetVelocity)),this.torque.set(this.computeTorque(c,this.targetHeading))},d.prototype.applyAccelerations=function(a){a.movementComponent.addVelocity(this.acceleration),a.movementComponent.addRotationVelocity(this.torque)},d.prototype.updateGroundNormal=function(a){this.groundNormal.set(this.getTerrainNormal(a.translation))},d.prototype.checkGroundContact=function(a,b){this.groundHeight=this.getTerrainHeight(b.translation),b.translation.y<=this.groundHeight?(this.groundContact=1,this.updateGroundNormal(b)):this.groundContact=0},d.prototype.applyGroundContact=function(a,b){this.groundHeight>=b.translation.y&&(b.translation.y=this.groundHeight,a.movementComponent.velocity.y<0&&(a.movementComponent.velocity.y=0))},d.prototype.run=function(a){var b=a.transformComponent.transform;this.checkGroundContact(a,b),this.updateTargetVectors(b),this.updateVelocities(a),this.applyAccelerations(a),this.applyGroundContact(a,b)},a.exports=d},485:function(a,b,c){function d(a){this.matrixData=a,this.width=a.length-1}var e=c(9);d.prototype.getMatrixData=function(){return this.matrixData},d.prototype.getPointInMatrix=function(a,b){return this.matrixData[a][b]},d.prototype.getAt=function(a,b){return 0>a||a>this.width||0>b||b>this.width?0:this.getPointInMatrix(a,b)},d.prototype.getInterpolated=function(a,b){var c=this.getAt(Math.ceil(a),Math.ceil(b)),d=this.getAt(Math.ceil(a),Math.floor(b)),e=this.getAt(Math.floor(a),Math.ceil(b)),f=this.getAt(Math.floor(a),Math.floor(b)),g=a-Math.floor(a),h=b-Math.floor(b),i=c*g+e*(1-g),j=d*g+f*(1-g),k=i*h+j*(1-h);return k},d.prototype.getTriangleAt=function(a,b){var c,d=Math.ceil(a),e=Math.floor(a),f=Math.ceil(b),g=Math.floor(b),h=a-e,i=b-g,j={x:e,y:f,z:this.getAt(e,f)},k={x:d,y:g,z:this.getAt(d,g)};return c=1-i>h?{x:e,y:g,z:this.getAt(e,g)}:{x:d,y:f,z:this.getAt(d,f)},[j,k,c]},d.prototype.getPreciseHeight=function(a,b){var c=this.getTriangleAt(a,b),d=e.barycentricInterpolation(c[0],c[1],c[2],{x:a,y:b,z:0});return d.z},d.prototype.run=function(a){var b=a.transformComponent.transform.translation;b.y=this.getInterpolated(b.z,b.x)},a.exports=d},486:function(a,b,c){function d(){function a(a){t.size=a,t.splash=h.createSplashTexture(512,{trailStartRadius:25,trailEndRadius:0}),t.ring=h.createFlareTexture(a,{steps:u.ring,startRadius:a/4,endRadius:a/2}),t.dot=h.createFlareTexture(a,{steps:u.dot,startRadius:0,endRadius:a/2}),t.bell=h.createFlareTexture(a,{steps:u.bell,startRadius:0,endRadius:a/2}),t["default"]=h.createFlareTexture(a,{steps:u.none,startRadius:0,endRadius:a/2})}function b(a,b,c,d,e){for(var g=0;g<a.length;g++){var h=a[g];r.push(new f(b,h.tx,h.displace,h.size,h.intensity*p,c,d,e,t,k))}return r}function c(a){for(var b=0;b<a.length;b++)a[b].quad.removeFromWorld()}function d(b,c){p=b.intensity,q=new e(100*b.edgeRelevance);var d=s;b.highRes&&(d*=4),t.size!==d&&a(d),r=[],j=c.entity,k=c.world,m=!1,o=[b.color[0],b.color[1],b.color[2],1],n=[{size:2.53,tx:"bell",intensity:.7,displace:1},{size:.53,tx:"dot",intensity:.7,displace:1},{size:.83,tx:"bell",intensity:.2,displace:.8},{size:.4,tx:"ring",intensity:.1,displace:.6},{size:.3,tx:"bell",intensity:.1,displace:.4},{size:.6,tx:"bell",intensity:.1,displace:.3},{size:.3,tx:"dot",intensity:.1,displace:.15},{size:.22,tx:"ring",intensity:.03,displace:-.25},{size:.36,tx:"dot",intensity:.05,displace:-.5},{size:.8,tx:"ring",intensity:.1,displace:-.8},{size:.86,tx:"bell",intensity:.2,displace:-1.1},{size:1.3,tx:"ring",intensity:.05,displace:-1.5}],c.bounds=new l(c.entity.transformComponent.sync().worldTransform.translation,0)}function g(){c(r),r=[]}function i(a,d){if(d.bounds.center.copy(d.entity.transformComponent.sync().worldTransform.translation),d.activeCameraEntity.cameraComponent.camera.contains(d.bounds)){q.updateFrameGeometry(j,d.activeCameraEntity),m||(r=b(n,o,a.scale,a.edgeDampen,a.edgeScaling),m=!0);for(var e=0;e<r.length;e++)r[e].updatePosition(q)}else m&&(c(r),m=!1)}var j,k,m,n,o,p,q,r=[],s=64,t={},u={splash:{trailStartRadius:25,trailEndRadius:0},ring:[{fraction:0,value:0},{fraction:.7,value:0},{fraction:.92,value:1},{fraction:.98,value:0}],dot:[{fraction:0,value:1},{fraction:.3,value:.75},{fraction:.5,value:.45},{fraction:.65,value:.21},{fraction:.75,value:.1},{fraction:.98,value:0}],bell:[{fraction:0,value:1},{fraction:.15,value:.75},{fraction:.3,value:.5},{fraction:.4,value:.25},{fraction:.75,value:.05},{fraction:.98,value:0}],none:[{fraction:0,value:1},{fraction:1,value:0}]};return{setup:d,lateUpdate:i,cleanup:g}}function e(a){this.camRot=null,this.distance=0,this.offset=0,this.centerRatio=0,this.positionVector=new g,this.distanceVector=new g,this.centerVector=new g,this.displacementVector=new g,this.edgeRelevance=a}function f(a,b,c,d,e,f,h,l,m,n){this.sizeVector=new g(d,d,d),this.sizeVector.scale(f),this.positionVector=new g,this.flareVector=new g,this.intensity=e,this.displace=c,this.color=[a[0]*e,a[1]*e,a[2]*e,1],this.edgeDampen=h,this.edgeScaling=l;var o=new i(j.uber,"flareShader");o.uniforms.materialEmissive=this.color,o.uniforms.materialDiffuse=[0,0,0,1],o.uniforms.materialAmbient=[0,0,0,1],o.uniforms.materialSpecular=[0,0,0,1];var p=m[b];o.setTexture("DIFFUSE_MAP",p),o.setTexture("EMISSIVE_MAP",p),o.blendState.blending="AdditiveBlending",o.blendState.blendEquation="AddEquation",o.blendState.blendSrc="OneFactor",o.blendState.blendDst="OneFactor",o.depthState.enabled=!1,o.depthState.write=!1,o.cullState.enabled=!1;var q=new k(1,1),r=n.createEntity(q,o);r.meshRendererComponent.cullMode="Never",r.addToWorld(),this.material=o,this.quad=r}var g=c(8),h=c(210),i=c(30),j=c(46),k=c(28),l=c(13);d.externals={key:"LensFlareScript",name:"Lens Flare Script",description:"Makes an entity shine with some lensflare effect.",parameters:[{key:"scale",name:"Scale",type:"float",description:"Scale of flare quads",control:"slider","default":1,min:.01,max:2},{key:"intensity",name:"Intensity",type:"float",description:"Intensity of Effect",control:"slider","default":1,min:.01,max:2},{key:"edgeRelevance",name:"Edge Relevance",type:"float",description:"How much the effect cares about being centered or not",control:"slider","default":0,min:0,max:2},{key:"edgeDampen",name:"Edge Dampening",type:"float",description:"Intensity adjustment by distance from center",control:"slider","default":.2,min:0,max:1},{key:"edgeScaling",name:"Edge Scaling",type:"float",description:"Scale adjustment by distance from center",control:"slider","default":0,min:-2,max:2},{key:"color",name:"Color",type:"vec3",description:"Effect Color",control:"color","default":[.8,.75,.7]},{key:"highRes",name:"High Resolution",type:"boolean",description:"Intensity of Effect",control:"checkbox","default":!1}]},e.prototype.updateFrameGeometry=function(a,b){this.camRot=b.transformComponent.sync().transform.rotation,this.centerVector.set(b.transformComponent.sync().worldTransform.translation),this.displacementVector.set(a.transformComponent.sync().worldTransform.translation),this.displacementVector.sub(this.centerVector),this.distance=this.displacementVector.length(),this.distanceVector.setDirect(0,0,-this.distance),this.distanceVector.applyPost(this.camRot),this.centerVector.add(this.distanceVector),this.positionVector.set(this.centerVector),this.displacementVector.set(a.transformComponent.sync().worldTransform.translation),this.displacementVector.sub(this.positionVector),this.offset=this.displacementVector.length();var c=this.positionVector.length();c?this.centerRatio=1-this.offset*this.edgeRelevance/this.positionVector.length():this.centerRatio=1-this.offset*this.edgeRelevance,this.centerRatio=Math.max(0,this.centerRatio)},f.prototype.updatePosition=function(a){this.flareVector.set(a.displacementVector),this.positionVector.set(a.positionVector),this.flareVector.scale(this.displace),this.positionVector.add(this.flareVector),this.material.uniforms.materialEmissive=[this.color[0]*a.centerRatio*this.edgeDampen,this.color[1]*a.centerRatio*this.edgeDampen,this.color[2]*a.centerRatio*this.edgeDampen,1];var b=a.distance+a.distance*a.centerRatio*this.edgeScaling,c=this.quad.transformComponent.transform;c.scale.set(this.sizeVector),c.scale.scale(b),c.rotation.set(a.camRot),c.translation.set(this.positionVector),this.quad.transformComponent.setUpdated()},a.exports=d},487:function(a,b,c){function d(){function a(a,b,c){a.touchMode="Double",h.setup(a,b,c),i.setup(a,b,c)}function b(a,b,c){i.update(a,b,c),h.update(a,b,c)}function c(a,b,c){i.cleanup(a,b,c),h.cleanup(a,b,c)}function d(a,b,c){i.argsUpdated(a,b,c),h.argsUpdated(a,b,c)}var h=e.create(f),i=e.create(g);return{setup:a,cleanup:c,update:b,argsUpdated:d}}for(var e=c(4),f=c(365),g=c(488),h=c(6),i=f.externals.parameters,j=g.externals.parameters,k=h.deepClone(i.concat(j.slice(1))),l=k.length-1;l>=0;l--){var m=k[l];("panSpeed"===m.key||"touchMode"===m.key)&&k.splice(l,1)}for(var l=0;l<k.length;l++){var m=k[l];switch(m.key){case"dragButton":m["default"]="Left";break;case"panButton":m["default"]="Right";break;case"panSpeed":m["default"]=1;break;case"touchMode":m["default"]="Double"}}d.externals={key:"OrbitNPanControlScript",name:"Orbit and Pan Control",description:"This is a combo of orbitcamcontrolscript and pancamcontrolscript",parameters:k},a.exports=d},488:function(a,b,c){function d(){function a(a){var b=0,c=0,d=a[0].clientX,e=a[0].clientY;if(a.length>=2){var f=a[1].clientX,g=a[1].clientY;b=(d+f)/2,c=(e+g)/2}else b=d,c=e;return[b,c]}function b(b,c){i(b,c),n=c.goingToLookAt,j=e.UNIT_Y.clone(),k=e.UNIT_X.clone().negate(),l=new e,m=new e,c.translation=c.entity.transformComponent.transform.translation.clone();
-var d=c.world.gooRunner.renderer;c.devicePixelRatio=d._useDevicePixelRatio&&window.devicePixelRatio?window.devicePixelRatio/d.svg.currentScale:1,o={x:0,y:0,ox:0,oy:0,dx:0,dy:0,down:!1},p={mousedown:function(a){if(!b.whenUsed||c.entity===c.activeCameraEntity){var d=a.button;if(0===d&&(a.altKey?d=2:a.shiftKey&&(d=1)),d===c.panButton||-1===c.panButton){o.down=!0;var e=void 0!==a.offsetX?a.offsetX:a.layerX,f=void 0!==a.offsetY?a.offsetY:a.layerY;o.ox=o.x=e,o.oy=o.y=f}}},mouseup:function(a){var b=a.button;0===b&&(a.altKey?b=2:a.shiftKey&&(b=1)),o.down=!1,o.dx=o.dy=0},mousemove:function(a){if((!b.whenUsed||c.entity===c.activeCameraEntity)&&o.down){var d=void 0!==a.offsetX?a.offsetX:a.layerX,e=void 0!==a.offsetY?a.offsetY:a.layerY;o.x=d,o.y=e,c.dirty=!0}},mouseleave:function(){o.down=!1,o.ox=o.x,o.oy=o.y},touchstart:function(d){if(!b.whenUsed||c.entity===c.activeCameraEntity){if(o.down="Any"===b.touchMode||"Single"===b.touchMode&&1===d.targetTouches.length||"Double"===b.touchMode&&2===d.targetTouches.length,!o.down)return;var e=a(d.targetTouches);o.ox=o.x=e[0],o.oy=o.y=e[1]}},touchmove:function(d){if(!b.whenUsed||c.entity===c.activeCameraEntity){if(!o.down)return;var e=a(d.targetTouches);o.x=e[0],o.y=e[1],c.dirty=!0}},touchend:function(){o.down=!1,o.ox=o.x,o.oy=o.y}};for(var f in p)c.domElement.addEventListener(f,p[f]);c.dirty=!0}function c(a,b){if(b.dirty){if(o.dx=o.x-o.ox,o.dy=o.y-o.oy,0===o.dx&&0===o.dy&&!q)return void(b.dirty=!!b.lookAtPoint);q=!1,a.invertX&&(o.dx=-o.dx),a.invertY&&(o.dy=-o.dy),o.ox=o.x,o.oy=o.y;var c=f.mainCamera,d=b.entity,e=d.transformComponent.transform,i=d.cameraComponent.camera;if(n&&c){if(n.equals(c.translation))return;var p=b.viewportWidth/b.devicePixelRatio,r=b.viewportHeight/b.devicePixelRatio;c.getScreenCoordinates(n,p,r,l),l.subDirect(o.dx,o.dy,0),c.getWorldCoordinates(l.x,l.y,p,r,l.z,l),n.set(l)}else{if(l.set(j).scale(o.dy),m.set(k).scale(o.dx),d.cameraComponent&&d.cameraComponent.camera){var i=d.cameraComponent.camera;l.scale((i._frustumTop-i._frustumBottom)/b.viewportHeight),m.scale((i._frustumRight-i._frustumLeft)/b.viewportWidth)}l.add(m),l.applyPost(e.rotation),i.projectionMode===h.Perspective?l.scale(20*a.panSpeed):l.scale(a.panSpeed),b.translation.add(l),d.transformComponent.setTranslation(b.translation),b.dirty=!1}g.emit("goo.cameraPositionChanged",{translation:e.translation.toArray(),lookAtPoint:n?n.toArray():null,id:d.id})}}function d(a,b){for(var c in p)b.domElement.removeEventListener(c,p[c])}function i(a,b){b.panButton=["Any","Left","Middle","Right"].indexOf(a.panButton)-1,b.panButton<-1&&(b.panButton=-1),b.dirty=!0,q=!0}var j,k,l,m,n,o,p,q=!1;return{setup:b,update:c,cleanup:d,argsUpdated:i}}var e=c(8),f=c(123),g=c(44),h=c(120);d.externals={key:"PanCamControlScript",name:"PanCamera Control",description:"Enables camera to pan around a point in 3D space using the mouse",parameters:[{key:"whenUsed",type:"boolean",name:"When Camera Used",description:"Script only runs when the camera to which it is added is being used.","default":!0},{key:"panButton",name:"Pan button",description:"Only pan with this button",type:"string",control:"select","default":"Any",options:["Any","Left","Middle","Right"]},{key:"touchMode",description:"Number of fingers needed to trigger panning.",type:"string",control:"select","default":"Double",options:["Any","Single","Double"]},{key:"panSpeed",type:"float","default":1,scale:.01}]},a.exports=d},489:function(a,b){function c(){function a(a){var b=a.button;return 0===b&&(a.altKey?b=2:a.shiftKey&&(b=1)),b}function b(b){if(!m.disable){var d=a(b.domEvent);d!==n.dragButton&&-1!==n.dragButton||!b.entity||(l=!1,b.entity.traverseUp(function(a){return a===n.entity?(l=!0,!1):void 0}),l&&c(b))}}function c(a){o.x=a.x,o.y=a.y,o.oldX=o.x,o.oldY=o.y,o.down=!0}function d(a){if(o.oldX=o.x,o.oldY=o.y,o.x=a.clientX||a.touches[0].clientX,o.y=a.clientY||a.touches[0].clientY,l&&o.down){var b=o.x-o.oldX,c=o.y-o.oldY;o.ax+=b,o.ay+=c,e()}}function e(){n.entity.transformComponent.transform.rotation.setIdentity(),n.entity.transformComponent.transform.rotation.rotateX(o.ay/300*m.yMultiplier),n.entity.transformComponent.transform.rotation.rotateY(o.ax/200*m.xMultiplier),n.entity.transformComponent.setUpdated()}function f(){o.down=!1}function g(a,b){m=a,n=b,n.dragButton=["Any","Left","Middle","Right"].indexOf(m.dragButton)-1,n.dragButton<-1&&(n.dragButton=-1),e()}function h(a,c){k=c.world.gooRunner,k.addEventListener("mousedown",b),k.addEventListener("touchstart",b),k.renderer.domElement.addEventListener("mousemove",d),k.renderer.domElement.addEventListener("touchmove",d),k.renderer.domElement.addEventListener("mouseup",f),k.renderer.domElement.addEventListener("touchend",f),o={down:!1,x:0,y:0,oldX:0,oldY:0,ax:0,ay:0},g(a,c)}function i(){}function j(a,c){c.domElement.removeEventListener("mousemove",d),c.domElement.removeEventListener("touchmove",d),c.domElement.removeEventListener("mouseup",f),c.domElement.removeEventListener("touchend",f),k.removeEventListener("mousedown",b),k.removeEventListener("touchstart",b)}var k,l,m,n,o;return{setup:h,update:i,cleanup:j,argsUpdated:g}}c.externals={key:"PickAndRotateScript",name:"Pick and Rotate",description:"Enables pick-drag-rotating entities",parameters:[{key:"disable",description:"Prevent rotation. For preventing this script programmatically.",type:"boolean","default":!1},{key:"dragButton",description:"Button to enable dragging","default":"Any",options:["Any","Left","Middle","Right"],type:"string",control:"select"},{key:"xMultiplier",description:"Horizontal rotation multiplier","default":1,type:"float",control:"slider",min:-4,max:4},{key:"yMultiplier",description:"Vertical rotation multiplier","default":1,type:"float",control:"slider",min:-4,max:4}]},a.exports=c},490:function(a,b){function c(a){this.collidables=a||[]}c.prototype.addCollidable=function(a){this.collidables.push(a)},c.prototype.removeAllAt=function(a,b,c){this.collidables=this.collidables.filter(function(d){return d.bottom<=c&&d.top>=c?!window.PolyK.ContainsPoint(d.poly,a,b):void 0})},c.prototype.inside=function(a,b,c){for(var d=0;d<this.collidables.length;d++){var e=this.collidables[d];if(e.bottom<=b&&e.top>=b&&window.PolyK.ContainsPoint(e.poly,a,c))return window.PolyK.ClosestEdge(e.poly,a,c)}},c.prototype.run=function(a){for(var b=a.transformComponent,c=b.transform.translation,d=0;d<this.collidables.length;d++){var e=this.collidables[d];if(e.bottom<=c.y&&e.top>=c.y&&window.PolyK.ContainsPoint(e.poly,c.x,c.z)){var f=window.PolyK.ClosestEdge(e.poly,c.x,c.z);return c.x=f.point.x,c.z=f.point.y,void b.setUpdated()}}},a.exports=c},491:function(a,b){function c(){function a(a,b){e={x:0,y:0},f={x:0,y:0},g=b.entity,document.addEventListener("mousemove",c)}function b(a){f.x+=(e.x-f.x)*a.fraction,f.y+=(e.y-f.y)*a.fraction,g.setRotation(f.y/200,f.x/200,0)}function c(a){e.x=a.x,e.y=a.y}function d(){document.removeEventListener("mousemove",c)}var e,f,g;return{setup:a,update:b,cleanup:d}}c.externals={key:"RotationScript",name:"Mouse Rotation",description:"",parameters:[{key:"fraction",name:"Speed","default":.01,type:"float",control:"slider",min:.01,max:1}]},a.exports=c},492:function(a,b,c){function d(){e.apply(this,arguments),this._type="ScriptComponent"}var e=c(88),f=c(353),g=c(55),h=c(6),i=c(54),j=c(44),k=c(4),l=c(5);d.prototype=Object.create(e.prototype),d.prototype.constructor=d,e._registerClass("script",d),d.ENGINE_SCRIPT_PREFIX="GOO_ENGINE_SCRIPTS/",d.prototype._prepare=function(){},d.prototype._create=function(){return new f},d.prototype.update=function(a,b,c){var d=this;return e.prototype.update.call(this,a,b,c).then(function(a){return a?g.all(h.map(b.scripts,function(b){return d._updateScriptInstance(a,b,c)},null,"sortValue")).then(function(b){return a.scripts=b,a}):void 0})},d.prototype._updateScriptInstance=function(a,b,c){var d=this;return this._createOrLoadScript(a,b).then(function(a){var e=b.options||{};a.parameters&&h.defaults(e,a.parameters),a.externals&&a.externals.parameters&&l.fillDefaultValues(e,a.externals.parameters);var f=null;if(a.context)if(f=a,f.parameters)for(var g=Object.keys(f.parameters),i=0;i<g.length;i++)delete f.parameters[g[i]];else f.parameters={};else f=Object.create(a),f.instanceId=b.id,f.parameters={},f.enabled=!1;return d._setParameters(f.parameters,e,a.externals,c).then(function(){f.argsUpdated&&f.context&&f.argsUpdated(f.parameters,f.context,window.goo)}).then(h.constant(f))})},d.prototype._createOrLoadScript=function(a,b){var c=b.scriptRef,e=0===c.indexOf(d.ENGINE_SCRIPT_PREFIX);return e?this._createOrLoadEngineScript(a,b):this._createOrLoadCustomScript(a,b)},d.prototype._createOrLoadEngineScript=function(a,b){var c=this._findScriptInstance(a,b.id),e=d.ENGINE_SCRIPT_PREFIX;return c?i.resolve(c):this._createEngineScript(b.scriptRef.slice(e.length))},d.prototype._createOrLoadCustomScript=function(a,b){var c=this,d=b.scriptRef;return this._load(d).then(function(e){var f=c._findScriptInstance(a,b.id);return f&&f.body===e.body?f:c._load(d,{reload:!0})})},d.prototype._findScriptInstance=function(a,b){return h.find(a.scripts,function(a){return a.instanceId===b})},d.prototype._createEngineScript=function(a){var b=k.create(a);if(!b)throw new Error("Unrecognized script name");return b.id=d.ENGINE_SCRIPT_PREFIX+a,b.enabled=!1,j.emit("goo.scriptExternals",{id:b.id,externals:b.externals}),i.resolve(b)},d.prototype._setParameters=function(a,b,c,d){var e=this;if(!c||!c.parameters)return i.resolve();var f=c.parameters.map(function(c){return e._setParameter(a,b[c.key],c,d)});return a.enabled=b.enabled!==!1,g.all(f)},d.prototype._setParameter=function(a,b,c,d){function e(b){return a[k]=b,i.resolve()}function f(){return void 0===c["default"]?h.deepClone(l.DEFAULTS_BY_TYPE[m]):h.deepClone(c["default"])}function g(){if(!b||b.enabled===!1)return e(null);var a=b[m+"Ref"]||b;return j._load(a,d).then(e)}var j=this,k=c.key,m=c.type;return l.TYPE_VALIDATORS[m](b)?"entity"===m?(g(),i.resolve()):l.isRefType(m)?g():e(h.clone(b)):e(f())},a.exports=d},493:function(a,b,c){function d(){o.apply(this,arguments),this._scriptElementsByURL=new Map,this._bodyCache={},this._dependencyPromises={},this._currentScriptLoading=null,this._addGlobalErrorListener()}function e(a,b){if(!a.scriptRefs)return void(a.scriptRefs=[b]);var c=a.scriptRefs.indexOf(b);-1===c&&a.scriptRefs.push(b)}function f(a,b){a.scriptRefs&&s.remove(a.scriptRefs,b)}function g(a){return a.scriptRefs&&a.scriptRefs.length>0}function h(a,b){return a.scriptRefs&&a.scriptRefs.indexOf(b)>-1}function i(a){for(var b=[],c=document.querySelectorAll("script"),d=0;d<c.length;++d){var e=c[d];h(e,a)&&b.push(e)}return b}function j(a){return Boolean(a.className)}function k(a){return!j(a)&&void 0!==a.body}function l(){for(var a=document.querySelectorAll("script"),b=0;b<a.length;++b){var c=a[b];c.isDependency&&!g(c)&&c.parentNode&&c.parentNode.removeChild(c)}}function m(a,b,c){return q.createPromise(function(d){function e(e){var f={message:e,file:c};n(a,f),b.parentNode&&b.parentNode.removeChild(b),d()}var f,g=!1;b.onload=function(){d(),f&&clearTimeout(f)},b.onerror=function(a){g=!0,f&&clearTimeout(f),console.error(a),e("Could not load dependency "+c)},g||(g=!0,f=setTimeout(function(){e("Loading dependency "+c+" failed (time out)")},w))})}function n(a,b){if(b.file){var c=b.message;b.line&&(c+=" - on line "+b.line),a.dependencyErrors=a.dependencyErrors||{},a.dependencyErrors[b.file]=b}else{a.errors=a.errors||[];var c=b.message;b.line&&(c+=" - on line "+b.line),a.errors.push(b),a.setup=null,a.update=null,a.fixedUpdate=null,a.lateUpdate=null,a.run=null,a.cleanup=null,a.argsUpdated=null,a.enter=null,a.exit=null,a.parameters={},a.enabled=!1}}var o=c(85),p=c(55),q=c(54),r=c(6),s=c(86),t=c(44),u=c(5),v=c(4),w=6e3;d.prototype=Object.create(o.prototype),d.prototype.constructor=d,o._registerClass("script",d),d.prototype._create=function(){return{externals:{},setup:null,fixedUpdate:null,lateUpdate:null,update:null,run:null,cleanup:null,parameters:{},argsUpdated:null,name:null}},d.prototype._remove=function(a){var b=this._objects.get(a);if(b&&b.cleanup&&b.context)try{b.cleanup(b.parameters,b.context,window.goo)}catch(c){}this._objects["delete"](a),delete this._bodyCache[a]};var x=1;d.prototype._updateFromCustom=function(a,b){if(this._bodyCache[b.id]===b.body)return a;delete a.errors,this._bodyCache[b.id]=b.body;var c=document.getElementById(d.DOM_ID_PREFIX+b.id);c&&c.parentNode.removeChild(c),window._gooScriptFactories||(window._gooScriptFactories={});var e=["//# sourceURL=goo://goo-custom-scripts/"+encodeURIComponent(b.name.replace(" ","_"))+".js?v="+x++,"","// "+b.name,"","// <![CDATA[","window._gooScriptFactories['"+b.id+"'] = function () {",b.body," var obj = {","  externals: {}"," };",' if (typeof parameters !== "undefined") {',"  obj.externals.parameters = parameters;"," }",' if (typeof argsUpdated !== "undefined") {',"  obj.argsUpdated = argsUpdated;"," }",' if (typeof setup !== "undefined") {',"  obj.setup = setup;"," }",' if (typeof cleanup !== "undefined") {',"  obj.cleanup = cleanup;"," }",' if (typeof update !== "undefined") {',"  obj.update = update;"," }",' if (typeof fixedUpdate !== "undefined") {',"  obj.fixedUpdate = fixedUpdate;"," }",' if (typeof lateUpdate !== "undefined") {',"  obj.lateUpdate = lateUpdate;"," }",' if (typeof enter !== "undefined") {',"  obj.enter = enter;"," }",' if (typeof exit !== "undefined") {',"  obj.exit = exit;"," }"," return obj;","};","// ]]>"].join("\n"),f=document.createElement("script");f.id=d.DOM_ID_PREFIX+b.id,f.innerHTML=e,f.async=!1,this._currentScriptLoading=b.id;var g=this.world.gooRunner.renderer.domElement.parentElement||document.body;g.appendChild(f);var h=window._gooScriptFactories[b.id];if(h){try{var i=h();a.id=b.id,d.validateParameters(i,a),a.setup=i.setup,a.update=i.update,a.fixedUpdate=i.fixedUpdate,a.lateUpdate=i.lateUpdate,a.cleanup=i.cleanup,a.enter=i.enter,a.exit=i.exit,a.argsUpdated=i.argsUpdated,a.parameters={},a.enabled=!1,a.body=b.body}catch(j){var k={message:j.toString()};if(j instanceof Error){var l=j.stack.split("\n")[1].match(/(\d+):\d+\)$/);l&&(k.line=parseInt(l[1],10)-1)}n(a,k)}this._currentScriptLoading=null}return a.externals&&u.fillDefaultNames(a.externals.parameters),a},d.prototype._updateFromClass=function(a,b){if(!a.externals||a.externals.name!==b.className){var c=v.create(b.className);if(!c)throw new Error("Unrecognized script name");a.id=b.id,a.externals=c.externals,a.setup=c.setup,a.update=c.update,a.fixedUpdate=c.fixedUpdate,a.lateUpdate=c.lateUpdate,a.run=c.run,a.cleanup=c.cleanup,a.argsUpdated=c.argsUpdated,a.enter=c.enter,a.exit=c.exit,a.parameters=c.parameters||{},a.enabled=!1,u.fillDefaultNames(a.externals.parameters)}return a},d.prototype._addDependency=function(a,b,c){var d=this,f=document.querySelector('script[src="'+b+'"]');if(f)return e(f,c),this._dependencyPromises[b]||q.resolve();f=document.createElement("script"),f.src=b,f.setAttribute("data-script-id",c),f.isDependency=!0,f.async=!1,this._scriptElementsByURL.set(b,f),e(f,c);var g=m(a,f,b).then(function(){delete d._dependencyPromises[b]});return this._dependencyPromises[b]=g,g},d.prototype._update=function(a,b,c){var d=this;return o.prototype._update.call(this,a,b,c).then(function(e){if(e){var g=[];if(k(b)&&b.dependencies){delete e.dependencyErrors;var h=i(b.id);r.forEach(b.dependencies,function(a){var c=a.url,f=s.find(h,function(a){return a.src===c});f&&s.remove(h,f),g.push(d._addDependency(e,c,b.id))},null,"sortValue"),r.forEach(h,function(a){f(a,b.id)})}var m=d.world.gooRunner.renderer.domElement.parentElement||document.body;return r.forEach(b.dependencies,function(a){var b=d._scriptElementsByURL.get(a.url);b&&m.appendChild(b)},null,"sortValue"),p.all(g).then(function(){return j(b)?d._updateFromClass(e,b,c):k(b)&&d._updateFromCustom(e,b,c),b.body&&t.emit("goo.scriptExternals",{id:b.id,externals:e.externals}),e.name=b.name,e.errors||e.dependencyErrors?(t.emit("goo.scriptError",{id:a,errors:e.errors,dependencyErrors:e.dependencyErrors}),e):(t.emit("goo.scriptError",{id:a,errors:null}),r.extend(e.parameters,b.options),l(),e)})}})},d.prototype._addGlobalErrorListener=function(){var a=this;window.addEventListener("error",function(b){if(b.filename){var c=document.querySelector('script[src="'+b.filename+'"]');if(c){var e=c.getAttribute("data-script-id"),f=a._objects.get(e);if(f){var g={message:b.message,line:b.lineno,file:b.filename};n(f,g)}c.parentNode.removeChild(c)}}if(a._currentScriptLoading){var h=document.getElementById(d.DOM_ID_PREFIX+a._currentScriptLoading);h&&h.parentNode.removeChild(h),delete window._gooScriptFactories[a._currentScriptLoading];var f=a._objects.get(a._currentScriptLoading),g={message:b.message,line:b.lineno-1};n(f,g),a._currentScriptLoading=null}})},d.validateParameter=function(a){for(var b=0;b<u.PROPERTY_TYPES.length;++b){var c=u.PROPERTY_TYPES[b],d=a[c.prop],e="undefined"!=typeof d,f='Property "'+c.prop+'" must be ';if(c.mustBeDefined||e){var g=u.TYPE_VALIDATORS[c.type],h=c.getAllowedValues?c.getAllowedValues(a):null;if(e&&c.minLength&&d.length<c.minLength)return{message:f+"longer than "+(c.minLength-1)};if(h&&-1===h.indexOf(d))return{message:f+"one of: "+h.join(", ")};if(!g(d))return{message:f+"of type "+c.type}}}},d.validateParameters=function(a,b){var c=a.errors||[];if("object"!=typeof a.externals)return void(b.externals={});var e=a.externals;if(!e.parameters||e.parameters instanceof Array||c.push("externals.parameters must be an array"),c.length)return void(b.errors=c);if(b.externals.parameters=[],e.parameters){for(var f={},g=0;g<e.parameters.length;g++){var h=e.parameters[g],i=d.validateParameter(h);i&&c.push(i),(null===h["default"]||void 0===h["default"])&&(h["default"]=u.DEFAULTS_BY_TYPE[h.type]),h.key&&f[h.key]&&c.push({message:'Duplicate parameter key: "'+h.key+'"'}),f[h.key]=!0,b.externals.parameters.push(h)}c.length&&(b.errors=c)}},d.DOM_ID_PREFIX="_script_",a.exports=d},494:function(a,b,c){c(493),c(492)},495:function(a,b,c){var d=c(4),e={OrbitCamControlScript:c(365),OrbitNPanControlScript:c(487),FlyControlScript:c(481),AxisAlignedCamControlScript:c(477),PanCamScript:c(488),MouseLookControlScript:c(483),WasdControlScript:c(482),ButtonScript:c(479),PickAndRotateScript:c(489),LensFlareScript:c(486)};for(var f in e)d.register(e[f])},496:function(a,b){function c(a){this.elevationData=a}c.prototype.getClosest=function(a,b){for(var c=Number.MAX_VALUE,d=-1,e=0;e<this.elevationData.length;e+=3){var f=Math.pow(this.elevationData[e+0]-a,2)+Math.pow(this.elevationData[e+2]-b,2);c>f&&(c=f,d=e)}return this.elevationData[d+1]},c.prototype.run=function(a){var b=a.transformComponent.transform.translation,c=this.getClosest(b.x,b.z),d=b.y-c;b.y-=.1*d},a.exports=c},497:function(a,b,c){function d(a,b){if(a.minX>a.maxX)throw new Error({name:"Terrain Exception",message:"minX is larger than maxX"});if(a.minY>a.maxY)throw new Error({name:"Terrain Exception",message:"minY is larger than maxY"});if(a.minZ>a.maxZ)throw new Error({name:"Terrain Exception",message:"minZ is larger than maxZ"});if(!b)throw new Error({name:"Terrain Exception",message:"No heightmap data specified"});if(b.length!==b[0].length)throw new Error({name:"Terrain Exception",message:"Heightmap data is not a square"});return!0}function e(a,b,c){b=b||k,d(b,a,c);var e={dimensions:b,sideQuadCount:a.length-1,script:new g(a)};return e}function f(){this.heightMapData=[],this.yMargin=1}var g=c(485),h=c(8),i=new h,j=new h,k={minX:0,maxX:100,minY:0,maxY:50,minZ:0,maxZ:100};f.prototype.addHeightData=function(a,b){var c=e(a,b,this.heightMapData);return this.heightMapData.push(c),c},f.prototype.getHeightDataForPosition=function(a){for(var b=0;b<this.heightMapData.length;b++){var c=this.heightMapData[b].dimensions;if(a.x<=c.maxX&&a.x>=c.minX&&a.y<c.maxY+this.yMargin&&a.y>c.minY-this.yMargin&&a.z<=c.maxZ&&a.z>=c.minZ)return this.heightMapData[b]}return null},f.prototype.displaceAxisDimensions=function(a,b,c,d){var e=a-b;return d*e/(c-b)},f.prototype.returnToWorldDimensions=function(a,b,c,d){var e=(c-b)/d,f=a*e;return b+f},f.prototype.getTerrainHeightAt=function(a){var b=this.getHeightDataForPosition(a);if(null===b)return null;var c=b.dimensions,d=this.displaceAxisDimensions(a.x,c.minX,c.maxX,b.sideQuadCount),e=this.displaceAxisDimensions(a.z,c.minZ,c.maxZ,b.sideQuadCount),f=b.script.getPreciseHeight(d,e);return f*(c.maxY-c.minY)+c.minY},f.prototype.getTerrainNormalAt=function(a){var b=this.getHeightDataForPosition(a);if(!b)return null;for(var c=b.dimensions,d=this.displaceAxisDimensions(a.x,c.minX,c.maxX,b.sideQuadCount),e=this.displaceAxisDimensions(a.z,c.minZ,c.maxZ,b.sideQuadCount),f=b.script.getTriangleAt(d,e),g=0;g<f.length;g++)f[g].x=this.returnToWorldDimensions(f[g].x,c.minX,c.maxX,b.sideQuadCount),f[g].z=this.returnToWorldDimensions(f[g].z,c.minY,c.maxY,1),f[g].y=this.returnToWorldDimensions(f[g].y,c.minZ,c.maxZ,b.sideQuadCount);return i.setDirect(f[1].x-f[0].x,f[1].z-f[0].z,f[1].y-f[0].y),j.setDirect(f[2].x-f[0].x,f[2].z-f[0].z,f[2].y-f[0].y),i.cross(j),i.y<0&&i.scale(-1),i.normalize(),i},a.exports=f}});
+/* Goo Engine UNOFFICIAL
+ * Copyright 2016 Goo Technologies AB
+ */
+
+webpackJsonp([17],{
+
+/***/ 0:
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__(476);
+
+
+/***/ },
+
+/***/ 476:
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = {
+		AxisAlignedCamControlScript: __webpack_require__(477),
+		BasicControlScript: __webpack_require__(478),
+		ButtonScript: __webpack_require__(479),
+		CannonPickScript: __webpack_require__(480),
+		FlyControlScript: __webpack_require__(481),
+		GroundBoundMovementScript: __webpack_require__(484),
+		HeightMapBoundingScript: __webpack_require__(485),
+		LensFlareScript: __webpack_require__(486),
+		MouseLookControlScript: __webpack_require__(483),
+		OrbitNPanControlScript: __webpack_require__(487),
+		PanCamScript: __webpack_require__(488),
+		PickAndRotateScript: __webpack_require__(489),
+		PolyBoundingScript: __webpack_require__(490),
+		RotationScript: __webpack_require__(491),
+		ScriptComponentHandler: __webpack_require__(492),
+		ScriptHandler: __webpack_require__(493),
+		ScriptHandlers: __webpack_require__(494),
+		ScriptRegister: __webpack_require__(495),
+		SparseHeightMapBoundingScript: __webpack_require__(496),
+		WasdControlScript: __webpack_require__(482),
+		WorldFittedTerrainScript: __webpack_require__(497)
+	};
+
+	if (typeof(window) !== 'undefined') {
+		for (var key in module.exports) {
+			window.goo[key] = module.exports[key];
+		}
+	}
+
+/***/ },
+
+/***/ 477:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Vector3 = __webpack_require__(8);
+	var MathUtils = __webpack_require__(9);
+
+	/**
+	 * Axis aligned camera control script
+	 * @returns {{setup: setup, update: update, cleanup: cleanup}}
+	 */
+	function AxisAlignedCamControlScript() {
+		function setup(params, env) {
+			// Look axis
+			env.axis = Vector3.UNIT_Z.clone();
+			// Up axis will most often be Y but you never know...
+			env.upAxis = Vector3.UNIT_Y.clone();
+			setView(params, env, params.view);
+			env.currentView = params.view;
+			env.lookAtPoint	= new Vector3();
+			env.distance	= params.distance;
+			env.smoothness	= Math.pow(MathUtils.clamp(params.smoothness, 0, 1), 0.3);
+			env.axisAlignedDirty = true;
+		}
+
+		function setView(params, env, view) {
+			if (env.currentView === view) {
+				return;
+			}
+			env.currentView = view;
+			switch (view) {
+				case 'XY':
+					env.axis.set(Vector3.UNIT_Z);
+					env.upAxis.set(Vector3.UNIT_Y);
+					break;
+				case 'ZY':
+					env.axis.set(Vector3.UNIT_X);
+					env.upAxis.set(Vector3.UNIT_Y);
+					break;
+			}
+			env.axisAlignedDirty = true;
+		}
+
+		function update(params, env) {
+			if (params.view !== env.currentView) {
+				env.axisAlignedDirty = true;
+			}
+			if (!env.axisAlignedDirty) {
+				return;
+			}
+			var entity = env.entity;
+			var transform = entity.transformComponent.transform;
+			transform.translation.set(env.axis).scale(env.distance).add(env.lookAtPoint);
+			// REVIEW: Collision with pancamscript? Make new panscript for the 2d camera, or bake the panning logic into the axisaligned camera script?
+			transform.lookAt(env.lookAtPoint, env.upAxis);
+			entity.transformComponent.setUpdated();
+
+			env.axisAlignedDirty = false;
+		}
+
+		// Removes all listeners
+		function cleanup(/*params, env*/) {
+		}
+
+		return {
+			setup: setup,
+			update: update,
+			cleanup: cleanup
+		};
+	}
+
+	AxisAlignedCamControlScript.externals = {
+		key: 'AxisAlignedCamControlScript',
+		name: 'Axis-aligned Camera Control',
+		description: 'Aligns a camera along an axis, and enables switching between them.',
+		parameters: [{
+			key: 'whenUsed',
+			name: 'When Camera Used',
+			description: 'Script only runs when the camera to which it is added is being used.',
+			'default': true,
+			type: 'boolean'
+		}, {
+			key: 'distance',
+			name: 'Distance',
+			type: 'float',
+			description: 'Camera distance from lookat point',
+			control: 'slider',
+			'default': 1,
+			min: 1,
+			max: 1e3
+		}, {
+			key: 'view',
+			type: 'string',
+			'default': 'XY',
+			control: 'select',
+			options: ['XY', 'ZY']
+		}]
+	};
+
+	module.exports = AxisAlignedCamControlScript;
+
+/***/ },
+
+/***/ 478:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Vector3 = __webpack_require__(8);
+	var Matrix3 = __webpack_require__(24);
+
+	/**
+	 * Make an entity controllable via mouse and keyboard. WASD keys move the entity towards the back, left,
+	 * front and right respectively. Shift causes speed to drop to a tenth. R and F move it up or down. Q and E roll it
+	 * towards the left or right. The arrow keys cause the entity to rotate, as does dragging with the mouse.
+	 *
+	 * @param {Element} domElement Element to add mouse/key listeners to
+	 */
+	function BasicControlScript(properties) {
+		properties = properties || {};
+		this.domElement = properties.domElement === undefined ? null : properties.domElement.domElement || properties.domElement;
+
+		this.name = 'BasicControlScript';
+
+		/** The regular speed of the entity.
+		 * @type {number}
+		 * @default
+		 */
+		this.movementSpeed = 10.0;
+		/** The regular speed of the entity when rolling.
+		 * @type {number}
+		 * @default
+		 */
+		this.rollSpeed = 2.0;
+		this.movementSpeedMultiplier = 1.0;
+
+		this.mouseStatus = 0;
+		this.moveState = {
+			up: 0,
+			down: 0,
+			left: 0,
+			right: 0,
+			forward: 0,
+			back: 0,
+			pitchUp: 0,
+			pitchDown: 0,
+			yawLeft: 0,
+			yawRight: 0,
+			rollLeft: 0,
+			rollRight: 0
+		};
+		this.moveVector = new Vector3(0, 0, 0);
+		this.rotationVector = new Vector3(0, 0, 0);
+		this.multiplier = new Vector3(1, 1, 1);
+		this.rotationMatrix = new Matrix3();
+		this.tmpVec = new Vector3();
+
+		this.handleEvent = function (event) {
+			if (typeof this[event.type] === 'function') {
+				this[event.type](event);
+			}
+		};
+
+		this.keydown = function (event) {
+			if (event.altKey) {
+				return;
+			}
+
+			// event.preventDefault();
+			switch (event.keyCode) {
+				case 16: /* shift */
+					this.movementSpeedMultiplier = 0.1;
+					break;
+
+				case 87: /* W */
+					this.moveState.forward = 1;
+					break;
+				case 83: /* S */
+					this.moveState.back = 1;
+					break;
+
+				case 65: /* A */
+					this.moveState.left = 1;
+					break;
+				case 68: /* D */
+					this.moveState.right = 1;
+					break;
+
+				case 82: /* R */
+					this.moveState.up = 1;
+					break;
+				case 70: /* F */
+					this.moveState.down = 1;
+					break;
+
+				case 38: /* up */
+					this.moveState.pitchUp = 1;
+					break;
+				case 40: /* down */
+					this.moveState.pitchDown = 1;
+					break;
+				case 37: /* left */
+					this.moveState.yawLeft = 1;
+					break;
+				case 39: /* right */
+					this.moveState.yawRight = 1;
+					break;
+
+				case 81: /* Q */
+					this.moveState.rollLeft = 1;
+					break;
+				case 69: /* E */
+					this.moveState.rollRight = 1;
+					break;
+			}
+
+			this.updateMovementVector();
+			this.updateRotationVector();
+		};
+
+		this.keyup = function (event) {
+			switch (event.keyCode) {
+				case 16: /* shift */
+					this.movementSpeedMultiplier = 1;
+					break;
+
+				case 87: /* W */
+					this.moveState.forward = 0;
+					break;
+				case 83: /* S */
+					this.moveState.back = 0;
+					break;
+
+				case 65: /* A */
+					this.moveState.left = 0;
+					break;
+				case 68: /* D */
+					this.moveState.right = 0;
+					break;
+
+				case 82: /* R */
+					this.moveState.up = 0;
+					break;
+				case 70: /* F */
+					this.moveState.down = 0;
+					break;
+
+				case 38: /* up */
+					this.moveState.pitchUp = 0;
+					break;
+				case 40: /* down */
+					this.moveState.pitchDown = 0;
+					break;
+
+				case 37: /* left */
+					this.moveState.yawLeft = 0;
+					break;
+				case 39: /* right */
+					this.moveState.yawRight = 0;
+					break;
+
+				case 81: /* Q */
+					this.moveState.rollLeft = 0;
+					break;
+				case 69: /* E */
+					this.moveState.rollRight = 0;
+					break;
+
+			}
+
+			this.updateMovementVector();
+			this.updateRotationVector();
+		};
+
+		this.mousedown = function (event) {
+			if (this.domElement !== document) {
+				this.domElement.focus();
+			}
+
+			event.preventDefault();
+
+			event = event.touches && event.touches.length === 1 ? event.touches[0] : event;
+
+			this.mouseDownX = event.pageX;
+			this.mouseDownY = event.pageY;
+			this.mouseStatus = 1;
+
+			document.addEventListener('mousemove', this.mousemove, false);
+			document.addEventListener('mouseup', this.mouseup, false);
+			document.addEventListener('touchmove', this.mousemove, false);
+			document.addEventListener('touchend', this.mouseup, false);
+		}.bind(this);
+
+		this.mousemove = function (event) {
+			if (this.mouseStatus > 0) {
+				event = event.touches && event.touches.length === 1 ? event.touches[0] : event;
+
+				this.moveState.yawLeft = event.pageX - this.mouseDownX;
+				this.moveState.pitchDown = event.pageY - this.mouseDownY;
+
+				this.updateRotationVector();
+
+				this.mouseDownX = event.pageX;
+				this.mouseDownY = event.pageY;
+			}
+		}.bind(this);
+
+		this.mouseup = function (event) {
+			if (!this.mouseStatus) {
+				return;
+			}
+
+			event.preventDefault();
+
+			this.mouseStatus = 0;
+			this.moveState.yawLeft = this.moveState.pitchDown = 0;
+
+			this.updateRotationVector();
+
+			document.removeEventListener('mousemove', this.mousemove);
+			document.removeEventListener('mouseup', this.mouseup);
+			document.removeEventListener('touchmove', this.mousemove);
+			document.removeEventListener('touchend', this.mouseup);
+		}.bind(this);
+
+		this.updateMovementVector = function () {
+			var forward = this.moveState.forward || this.autoForward && !this.moveState.back ? 1 : 0;
+
+			this.moveVector.x = -this.moveState.left + this.moveState.right;
+			this.moveVector.y = -this.moveState.down + this.moveState.up;
+			this.moveVector.z = -forward + this.moveState.back;
+		};
+
+		this.updateRotationVector = function () {
+			this.rotationVector.x = -this.moveState.pitchDown + this.moveState.pitchUp;
+			this.rotationVector.y = -this.moveState.yawRight + this.moveState.yawLeft;
+			this.rotationVector.z = -this.moveState.rollRight + this.moveState.rollLeft;
+		};
+
+		this.getContainerDimensions = function () {
+			if (this.domElement !== document) {
+				return {
+					size: [this.domElement.offsetWidth, this.domElement.offsetHeight],
+					offset: [this.domElement.offsetLeft, this.domElement.offsetTop]
+				};
+			} else {
+				return {
+					size: [window.innerWidth, window.innerHeight],
+					offset: [0, 0]
+				};
+			}
+		};
+
+		if (this.domElement) {
+			this.setupMouseControls();
+		}
+		this.updateMovementVector();
+		this.updateRotationVector();
+	}
+
+	BasicControlScript.prototype.setupMouseControls = function () {
+		this.domElement.setAttribute('tabindex', -1);
+		this.domElement.addEventListener('mousedown', this.mousedown, false);
+		this.domElement.addEventListener('touchstart', this.mousedown, false);
+		this.domElement.addEventListener('keydown', this.keydown.bind(this), false);
+		this.domElement.addEventListener('keyup', this.keyup.bind(this), false);
+	};
+
+	//! AT: what is this?!?!
+	/*
+	 * Test on how to expose variables to a tool.
+	 * @returns {Array}
+	 */
+	BasicControlScript.prototype.externals = function () {
+		return [{
+			variable: 'movementSpeed',
+			type: 'number'
+		}, {
+			variable: 'rollSpeed',
+			type: 'number'
+		}];
+	};
+
+	BasicControlScript.prototype.run = function (entity, tpf, env) {
+		if (env) {
+			if (!this.domElement && env.domElement) {
+				this.domElement = env.domElement;
+				this.setupMouseControls();
+			}
+		}
+		var transformComponent = entity.transformComponent;
+		var transform = transformComponent.transform;
+
+		var delta = entity._world.tpf;
+
+		var moveMult = delta * this.movementSpeed * this.movementSpeedMultiplier;
+		var rotMult = delta * this.rollSpeed * this.movementSpeedMultiplier;
+
+		if (!this.moveVector.equals(Vector3.ZERO) || !this.rotationVector.equals(Vector3.ZERO) || this.mouseStatus > 0) {
+			transform.translation.x += this.moveVector.x * moveMult;
+			transform.translation.y += this.moveVector.y * moveMult;
+			transform.translation.z += this.moveVector.z * moveMult;
+
+			this.tmpVec.x += -this.rotationVector.x * rotMult * this.multiplier.x;
+			this.tmpVec.y += this.rotationVector.y * rotMult * this.multiplier.y;
+			this.tmpVec.z += this.rotationVector.z * rotMult * this.multiplier.z;
+			transform.rotation.fromAngles(this.tmpVec.x, this.tmpVec.y, this.tmpVec.z);
+
+			if (this.mouseStatus > 0) {
+				this.moveState.yawLeft = 0;
+				this.moveState.pitchDown = 0;
+				this.updateRotationVector();
+			}
+
+			transformComponent.setUpdated();
+		}
+	};
+
+	module.exports = BasicControlScript;
+
+/***/ },
+
+/***/ 479:
+/***/ function(module, exports, __webpack_require__) {
+
+	var SystemBus = __webpack_require__(44);
+
+	/**
+	 * Attaches mouse events to an entity.
+	 */
+	function ButtonScript() {
+		function setup(params, env) {
+			env.button = ['Any', 'Left', 'Middle', 'Right'].indexOf(params.button) - 1;
+			if (env.button < -1) {
+				env.button = -1;
+			}
+
+			// Mechanism to keep down render-to-pick buffer calls.
+			env.renderToPickHandler = function () {
+				env.skipUpdateBuffer = true;
+			};
+			SystemBus.addListener('ButtonScript.renderToPick', env.renderToPickHandler, false);
+
+			env.mouseState = {
+				x: 0,
+				y: 0,
+				down: false,
+				downOnEntity: false, // Used for the click event
+				overEntity: false
+			};
+
+			env.listeners = {
+				mousedown: function (event) {
+					if (!params.whenUsed) { return; }
+					var pressedButton = getButton(event);
+					if (pressedButton === env.button || env.button === -1) {
+						env.mouseState.down = true;
+						getMousePos(params, env, event);
+						onMouseEvent(params, env, 'mousedown');
+					}
+				},
+				mouseup: function (event) {
+					if (!params.whenUsed) { return; }
+					var pressedButton = getButton(event);
+					if (pressedButton === env.button || env.button === -1) {
+						env.mouseState.down = false;
+						getMousePos(params, env, event);
+						if (env.mouseState.downOnEntity) {
+							onMouseEvent(params, env, 'click');
+						}
+						onMouseEvent(params, env, 'mouseup');
+					}
+				},
+				dblclick: function (event) {
+					if (!params.whenUsed) { return; }
+					var pressedButton = getButton(event);
+					if (pressedButton === env.button || env.button === -1) {
+						env.mouseState.down = false;
+						getMousePos(params, env, event);
+						onMouseEvent(params, env, 'dblclick');
+					}
+				},
+				mousemove: function (event) {
+					if (!params.whenUsed || !params.enableOnMouseMove) { return; }
+					env.mouseState.down = false;
+					getMousePos(params, env, event);
+					onMouseEvent(params, env, 'mousemove');
+				},
+				touchstart: function (event) {
+					if (!params.whenUsed) { return; }
+					env.mouseState.down = true;
+
+					var touches = event.targetTouches;
+					var rect = env.domElement.getBoundingClientRect();
+					env.mouseState.x = touches[0].pageX - rect.left;
+					env.mouseState.y = touches[0].pageY - rect.top;
+					onMouseEvent(params, env, 'touchstart');
+				},
+				touchend: function (event) {
+					if (!params.whenUsed) { return; }
+					event.preventDefault();
+					event.stopPropagation();
+					env.mouseState.down = false;
+					onMouseEvent(params, env, 'touchend');
+				}
+			};
+			for (var event in env.listeners) {
+				env.domElement.addEventListener(event, env.listeners[event]);
+			}
+		}
+
+		function getMousePos(params, env, mouseEvent) {
+			var rect = env.domElement.getBoundingClientRect();
+			env.mouseState.x = mouseEvent.pageX - rect.left;
+			env.mouseState.y = mouseEvent.pageY - rect.top;
+		}
+
+		function update(params, env) {
+			env.skipUpdateBuffer = false;
+		}
+
+		function cleanup(params, env) {
+			// Remove event listeners
+			for (var event in env.listeners) {
+				env.domElement.removeEventListener(event, env.listeners[event]);
+			}
+			SystemBus.removeListener('ButtonScript.renderToPick', env.renderToPickHandler);
+		}
+
+		function getButton(event) {
+			var pressedButton = event.button;
+			if (pressedButton === 0) {
+				if (event.altKey) {
+					pressedButton = 2;
+				} else if (event.shiftKey) {
+					pressedButton = 1;
+				}
+			}
+			return pressedButton;
+		}
+
+		function onMouseEvent(params, env, type) {
+			var gooRunner = env.entity._world.gooRunner;
+
+			var pickResult = gooRunner.pickSync(env.mouseState.x, env.mouseState.y, env.skipUpdateBuffer);
+			if (!env.skipUpdateBuffer) {
+				SystemBus.emit('ButtonScript.renderToPick');
+			}
+			var entity = gooRunner.world.entityManager.getEntityByIndex(pickResult.id);
+			env.mouseState.downOnEntity = false;
+			if (entity === env.entity) {
+				SystemBus.emit(params.channel + '.' + type, {
+					type: type,
+					entity: entity
+				});
+				if (type === 'mousedown' || type === 'touchstart') {
+					env.mouseState.downOnEntity = true;
+				}
+				if (params.linkUrl && (type === 'click' || type === 'touchend')) {
+					window.open(params.linkUrl, params.linkTarget);
+				}
+			}
+
+			// mouseover
+			if (type === 'mousemove' && !env.mouseState.overEntity && entity === env.entity) {
+				SystemBus.emit(params.channel + '.mouseover', {
+					type: 'mouseover',
+					entity: entity
+				});
+			}
+			// mouseout
+			if (type === 'mousemove' && env.mouseState.overEntity && entity !== env.entity) {
+				SystemBus.emit(params.channel + '.mouseout', {
+					type: 'mouseout',
+					entity: entity
+				});
+			}
+			env.mouseState.overEntity = (entity === env.entity);
+		}
+
+		return {
+			setup: setup,
+			update: update,
+			cleanup: cleanup
+		};
+	}
+
+	ButtonScript.externals = {
+		key: 'ButtonScript',
+		name: 'Button',
+		description: 'Enables an entity to be interacted with using click or touch.',
+		parameters: [{
+			key: 'whenUsed',
+			type: 'boolean',
+			'default': true
+		}, {
+			key: 'button',
+			name: 'button',
+			description: 'Only interact with this mouse button.',
+			type: 'string',
+			control: 'select',
+			'default': 'Any',
+			options: ['Any', 'Left', 'Middle', 'Right']
+		}, {
+			key: 'linkUrl',
+			name: 'linkUrl',
+			description: 'URL to open when clicking the entity. Leave this field empty to disable.',
+			type: 'string',
+			'default': ''
+		}, {
+			key: 'linkTarget',
+			name: 'linkTarget',
+			description: 'The window to open the link in.',
+			type: 'string',
+			'default': '_blank'
+		}, {
+			key: 'channel',
+			name: 'channel',
+			description: 'Event channel to emit to. Will emit channel.click, .mousedown, .mouseup, .mouseover, .mouseout, .dblclick, .touchstart, .touchend',
+			type: 'string',
+			'default': 'button'
+		}, {
+			key: 'enableOnMouseMove',
+			name: 'enableOnMouseMove',
+			description: 'Enables .mousemove, .mouseover, and .mouseout events. For larger scenes, this might be worth turning off, for better performance.',
+			type: 'boolean',
+			'default': true
+		}]
+	};
+
+	module.exports = ButtonScript;
+
+
+/***/ },
+
+/***/ 480:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Vector3 = __webpack_require__(8);
+	var Renderer = __webpack_require__(123);
+	var Plane = __webpack_require__(121);
+
+	/* global CANNON */
+
+	function CannonPickScript() {
+		var pickButton;
+		var mouseState;
+		var cannonSystem;
+		var plane = new Plane();
+
+		function getTouchCenter(touches) {
+			var x1 = touches[0].clientX;
+			var y1 = touches[0].clientY;
+			var x2 = touches[1].clientX;
+			var y2 = touches[1].clientY;
+			var cx = (x1 + x2) / 2;
+			var cy = (y1 + y2) / 2;
+			return [cx, cy];
+		}
+
+		function setup(parameters, env) {
+			pickButton = ['Any', 'Left', 'Middle', 'Right'].indexOf(parameters.pickButton) - 1;
+			if (pickButton < -1) {
+				pickButton = -1;
+			}
+
+			// Joint body
+			cannonSystem = env.world.getSystem('CannonSystem');
+			var shape = new CANNON.Sphere(0.1);
+			var jointBody = env.jointBody = new CANNON.RigidBody(0, shape);
+			jointBody.collisionFilterGroup = 2;
+			jointBody.collisionFilterMask = 2;
+			cannonSystem.world.add(jointBody);
+
+			mouseState = {
+				x: 0,
+				y: 0,
+				ox: 0,
+				oy: 0,
+				dx: 0,
+				dy: 0,
+				down: false
+			};
+			var listeners = env.listeners = {
+				mousedown: function (event) {
+					if (!parameters.whenUsed || env.entity === env.activeCameraEntity) {
+						var button = event.button;
+						if (button === 0) {
+							if (event.altKey) {
+								button = 2;
+							} else if (event.shiftKey) {
+								button = 1;
+							}
+						}
+						if (button === pickButton || pickButton === -1) {
+							mouseState.down = true;
+							mouseState.ox = mouseState.x = event.clientX;
+							mouseState.oy = mouseState.y = event.clientY;
+						}
+					}
+				},
+				mouseup: function (event) {
+					var button = event.button;
+					if (button === 0) {
+						if (event.altKey) {
+							button = 2;
+						} else if (event.shiftKey) {
+							button = 1;
+						}
+					}
+					if (button === pickButton || pickButton === -1) {
+						mouseState.down = false;
+						mouseState.dx = mouseState.dy = 0;
+					}
+				},
+				mousemove: function (event) {
+					if (!parameters.whenUsed || env.entity === env.activeCameraEntity) {
+						if (mouseState.down) {
+							mouseState.x = event.clientX;
+							mouseState.y = event.clientY;
+							env.dirty = true;
+						}
+					}
+				},
+				mouseleave: function (/*event*/) {
+					mouseState.down = false;
+					mouseState.ox = mouseState.x;
+					mouseState.oy = mouseState.y;
+				},
+				touchstart: function (event) {
+					if (!parameters.whenUsed || env.entity === env.activeCameraEntity) {
+						mouseState.down = (event.targetTouches.length === 2);
+						if (!mouseState.down) { return; }
+
+						var center = getTouchCenter(event.targetTouches);
+						mouseState.ox = mouseState.x = center[0];
+						mouseState.oy = mouseState.y = center[1];
+					}
+				},
+				touchmove: function (event) {
+					if (!parameters.whenUsed || env.entity === env.activeCameraEntity) {
+						if (!mouseState.down) { return; }
+
+						var center = getTouchCenter(event.targetTouches);
+						mouseState.x = center[0];
+						mouseState.y = center[1];
+					}
+				},
+				touchend: function (/*event*/) {
+					mouseState.down = false;
+					mouseState.ox = mouseState.x;
+					mouseState.oy = mouseState.y;
+				}
+			};
+			for (var event in listeners) {
+				env.domElement.addEventListener(event, listeners[event]);
+			}
+			env.dirty = true;
+		}
+
+		function update(params, env) {
+			mouseState.dx = mouseState.x - mouseState.ox;
+			mouseState.dy = mouseState.y - mouseState.oy;
+
+			mouseState.ox = mouseState.x;
+			mouseState.oy = mouseState.y;
+
+			var mainCam = Renderer.mainCamera;
+
+			if (mainCam && mouseState.down && !env.mouseConstraint) {
+				// Shoot cannon.js ray. Not included in Goo Engine yet, so let's use it directly
+				var bodies = [];
+				var physicsEntities = env.world.by.system('CannonSystem').toArray();
+				for (var i = 0; i < physicsEntities.length; i++) {
+					var b = physicsEntities[i].cannonRigidbodyComponent.body;
+					if (b && b.shape instanceof CANNON.Box && b.motionstate === CANNON.Body.DYNAMIC) { // Cannon only supports convex with ray intersection
+						bodies.push(b);
+					}
+				}
+				// Get pick ray
+				var gooRay = mainCam.getPickRay(mouseState.x, mouseState.y, window.innerWidth, window.innerHeight);
+				var origin = new CANNON.Vec3(gooRay.origin.x, gooRay.origin.y, gooRay.origin.z);
+				var direction = new CANNON.Vec3(gooRay.direction.x, gooRay.direction.y, gooRay.direction.z);
+				var r = new CANNON.Ray(origin, direction);
+				var result = r.intersectBodies(bodies);
+				if (result.length) {
+					var b = result[0].body;
+					var p = result[0].point;
+					addMouseConstraint(params, env, p.x, p.y, p.z, b, gooRay.direction.scale(-1));
+				}
+			} else if (mainCam && mouseState.down && env.mouseConstraint && (mouseState.dx !== 0 || mouseState.dy !== 0)) {
+				// Get the current mouse point on the moving plane
+				var mainCam = Renderer.mainCamera;
+				var gooRay = mainCam.getPickRay(mouseState.x, mouseState.y, window.innerWidth, window.innerHeight);
+				var newPositionWorld = new Vector3();
+				plane.rayIntersect(gooRay, newPositionWorld, true);
+				moveJointToPoint(params, env, newPositionWorld);
+			} else if (!mouseState.down) {
+				// Remove constraint
+				removeJointConstraint(params, env);
+			}
+		}
+
+		function cleanup(parameters, environment) {
+			for (var event in environment.listeners) {
+				environment.domElement.removeEventListener(event, environment.listeners[event]);
+			}
+		}
+
+		function addMouseConstraint(params, env, x, y, z, body, normal) {
+			// The cannon body constrained by the mouse joint
+			env.constrainedBody = body;
+
+			// Vector to the clicked point, relative to the body
+			var v1 = new CANNON.Vec3(x, y, z).vsub(env.constrainedBody.position);
+
+			// Apply anti-quaternion to vector to tranform it into the local body coordinate system
+			var antiRot = env.constrainedBody.quaternion.inverse();
+			var pivot = antiRot.vmult(v1); // pivot is not in local body coordinates
+
+			// Move the cannon click marker particle to the click position
+			env.jointBody.position.set(x, y, z);
+
+			// Create a new constraint
+			// The pivot for the jointBody is zero
+			env.mouseConstraint = new CANNON.PointToPointConstraint(env.constrainedBody, pivot, env.jointBody, new CANNON.Vec3(0, 0, 0));
+
+			// Add the constriant to world
+			cannonSystem.world.addConstraint(env.mouseConstraint);
+
+			// Set plane distance from world origin by projecting world translation to plane normal
+			var worldCenter = new Vector3(x, y, z);
+			plane.constant = worldCenter.dot(normal);
+			plane.normal.set(normal);
+		}
+
+		// This functions moves the transparent joint body to a new postion in space
+		function moveJointToPoint(params, env, point) {
+			// Move the joint body to a new position
+			env.jointBody.position.set(point.x, point.y, point.z);
+			env.mouseConstraint.update();
+		}
+
+		function removeJointConstraint(params, env) {
+			// Remove constriant from world
+			cannonSystem.world.removeConstraint(env.mouseConstraint);
+			env.mouseConstraint = false;
+		}
+
+		return {
+			setup: setup,
+			update: update,
+			cleanup: cleanup
+		};
+	}
+
+	CannonPickScript.externals = {
+		key: 'CannonPickScript',
+		name: 'Cannon.js Body Pick',
+		description: 'Enables the user to physically pick a Cannon.js physics body and drag it around.',
+		parameters: [{
+			key: 'whenUsed',
+			type: 'boolean',
+			'default': true
+		}, {
+			key: 'pickButton',
+			name: 'Pan button',
+			description: 'Pick with this button',
+			type: 'string',
+			control: 'select',
+			'default': 'Any',
+			options: ['Any', 'Left', 'Middle', 'Right']
+		}, {
+			key: 'useForceNormal',
+			name: 'Use force normal',
+			type: 'boolean',
+			'default': false
+		}, {
+			key: 'forceNormal',
+			name: 'Force normal',
+			'default': [0, 0, 1],
+			type: 'vec3'
+		}]
+	};
+
+	module.exports = CannonPickScript;
+
+/***/ },
+
+/***/ 481:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Scripts = __webpack_require__(4);
+	var WasdControlScript = __webpack_require__(482);
+	var MouseLookControlScript = __webpack_require__(483);
+
+	function FlyControlScript() {
+		var wasdScript = Scripts.create(WasdControlScript);
+		var lookScript = Scripts.create(MouseLookControlScript);
+
+		function setup(parameters, environment) {
+			lookScript.setup(parameters, environment);
+			wasdScript.setup(parameters, environment);
+		}
+
+		function update(parameters, environment) {
+			lookScript.update(parameters, environment);
+			wasdScript.update(parameters, environment);
+		}
+
+		function cleanup(parameters, environment) {
+			lookScript.cleanup(parameters, environment);
+			wasdScript.cleanup(parameters, environment);
+		}
+
+		return {
+			setup: setup,
+			cleanup: cleanup,
+			update: update
+		};
+	}
+
+	var wasdParams = WasdControlScript.externals.parameters;
+	var mouseLookParams = MouseLookControlScript.externals.parameters;
+	var params = wasdParams.concat(mouseLookParams.slice(1));
+
+	FlyControlScript.externals = {
+		key: 'FlyControlScript',
+		name: 'Fly Control',
+		description: 'This is a combo of the Wasd script and the MouseLook script',
+		parameters: params
+	};
+
+	module.exports = FlyControlScript;
+
+/***/ },
+
+/***/ 482:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Vector3 = __webpack_require__(8);
+	var ScriptUtils = __webpack_require__(5);
+
+	function WasdControlScript() {
+		var entity, transformComponent, transform;
+		var _parameters;
+
+		var moveState;
+		var bypass = false;
+
+		var fwdVector = new Vector3(0, 0, -1);
+		var leftVector = new Vector3(-1, 0, 0);
+
+		var moveVector = new Vector3();
+		var calcVector = new Vector3();
+		var translation = new Vector3();
+
+		// ---
+		function updateMovementVector() {
+			moveVector.x = moveState.strafeLeft - moveState.strafeRight;
+			moveVector.z = moveState.forward - moveState.back;
+		}
+
+		function keyDown(event) {
+			if (event.altKey) {	return;	}
+
+			switch (ScriptUtils.keyForCode(event.keyCode)) {
+				case _parameters.crawlKey:
+					moveState.crawling = true;
+					break;
+
+				case _parameters.forwardKey:
+					moveState.forward = 1;
+					updateMovementVector();
+					break;
+				case _parameters.backKey:
+					moveState.back = 1;
+					updateMovementVector();
+					break;
+
+				case _parameters.strafeLeftKey:
+					moveState.strafeLeft = 1;
+					updateMovementVector();
+					break;
+				case _parameters.strafeRightKey:
+					moveState.strafeRight = 1;
+					updateMovementVector();
+					break;
+			}
+		}
+
+		function keyUp(event) {
+			if (event.altKey) {	return;	}
+
+			switch (ScriptUtils.keyForCode(event.keyCode)) {
+				case _parameters.crawlKey:
+					moveState.crawling = false;
+					break;
+
+				case _parameters.forwardKey:
+					moveState.forward = 0;
+					updateMovementVector();
+					break;
+				case _parameters.backKey:
+					moveState.back = 0;
+					updateMovementVector();
+					break;
+
+				case _parameters.strafeLeftKey:
+					moveState.strafeLeft = 0;
+					updateMovementVector();
+					break;
+				case _parameters.strafeRightKey:
+					moveState.strafeRight = 0;
+					updateMovementVector();
+					break;
+			}
+		}
+
+		function setupKeyControls(domElement) {
+			domElement.setAttribute('tabindex', -1);
+			domElement.addEventListener('keydown', keyDown, false);
+			domElement.addEventListener('keyup', keyUp, false);
+		}
+
+		function setup(parameters, environment) {
+			_parameters = parameters;
+			environment.moveState = moveState = {
+				strafeLeft: 0,
+				strafeRight: 0,
+				forward: 0,
+				back: 0,
+				crawling: false
+			};
+
+			entity = environment.entity;
+			transformComponent = entity.transformComponent;
+			transform = transformComponent.transform;
+			translation.copy(transform.translation);
+
+			setupKeyControls(environment.domElement);
+		}
+
+		function update(parameters, environment) {
+			if (!bypass && moveVector.equals(Vector3.ZERO)) {
+				return;
+			}
+
+			if (!bypass && (parameters.whenUsed && environment.entity !== environment.activeCameraEntity)) {
+				return;
+			}
+
+			bypass = false;
+
+			// direction of movement in local coords
+			calcVector.setDirect(
+				fwdVector.x * moveVector.z + leftVector.x * moveVector.x,
+				fwdVector.y * moveVector.z + leftVector.y * moveVector.x,
+				fwdVector.z * moveVector.z + leftVector.z * moveVector.x
+			);
+			calcVector.normalize();
+
+			// move speed for this run...
+			var moveMult = environment.world.tpf * (moveState.crawling ? parameters.crawlSpeed : parameters.walkSpeed);
+
+			// scale by speed
+			calcVector.scale(moveMult);
+
+			// grab orientation of player
+			var orient = transform.rotation;
+
+			// reorient our movement to entity space
+			calcVector.applyPost(orient);
+
+			// add to our transform
+			translation.add(calcVector);
+			transform.translation.copy(translation);
+
+			// set our component updated.
+			transformComponent.setUpdated();
+		}
+
+		function cleanup(parameters, env) {
+			env.domElement.removeEventListener('keydown', keyDown, false);
+			env.domElement.removeEventListener('keyup', keyUp, false);
+		}
+
+		function argsUpdated() {
+			bypass = true;
+		}
+
+		return {
+			setup: setup,
+			update: update,
+			cleanup: cleanup,
+			argsUpdated: argsUpdated
+		};
+	}
+
+	WasdControlScript.externals = {
+		key: 'WASD',
+		name: 'WASD Control',
+		description: 'Enables moving via the WASD keys',
+		parameters: [{
+			key: 'whenUsed',
+			type: 'boolean',
+			name: 'When Camera Used',
+			description: 'Script only runs when the camera to which it is added is being used.',
+			'default': true
+		}, {
+			key: 'crawlKey',
+			type: 'string',
+			control: 'key',
+			'default': 'Shift'
+		}, {
+			key: 'forwardKey',
+			type: 'string',
+			control: 'key',
+			'default': 'W'
+		}, {
+			key: 'backKey',
+			type: 'string',
+			control: 'key',
+			'default': 'S'
+		}, {
+			key: 'strafeLeftKey',
+			type: 'string',
+			control: 'key',
+			'default': 'A'
+		}, {
+			key: 'strafeRightKey',
+			type: 'string',
+			control: 'key',
+			'default': 'D'
+		}, {
+			key: 'walkSpeed',
+			type: 'int',
+			control: 'slider',
+			'default': 10,
+			min: 1,
+			max: 100,
+			exponential: true
+		}, {
+			key: 'crawlSpeed',
+			control: 'slider',
+			type: 'int',
+			'default': 1,
+			min: 0.1,
+			max: 10,
+			exponential: true
+		}]
+	};
+
+	module.exports = WasdControlScript;
+
+/***/ },
+
+/***/ 483:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Vector3 = __webpack_require__(8);
+	var MathUtils = __webpack_require__(9);
+	var GameUtils = __webpack_require__(221);
+
+	var allButtons = ['Any', 'Left', 'Middle', 'Right', 'None'];
+
+	function MouseLookControlScript() {
+		var buttonPressed = false;
+		var hasPointerLock = false;
+		var hasPointerLockSupport = false;
+		var lastX = 0, lastY = 0, x = 0, y = 0;
+		var angles;
+		var button;
+		var _environment;
+		var _parameters;
+		var _initialAzimuth;
+
+		function mouseDown(e) {
+			if (!_parameters.whenUsed || _environment.entity === _environment.activeCameraEntity) {
+				if (button === -1 || e.button === button || (button === 3 && !hasPointerLockSupport)) {
+					buttonPressed = true;
+					lastX = x = e.clientX;
+					lastY = y = e.clientY;
+				}
+			}
+		}
+
+		// Used when button is None.
+		// Helps attaching the lock if we failed in .setup().
+		function mouseDownToRequestPointerLock() {
+			if (!hasPointerLock) {
+				GameUtils.requestPointerLock();
+			}
+		}
+
+		function mouseMove(e) {
+			if (hasPointerLock) {
+				return;
+			}
+			if (!_parameters.whenUsed || _environment.entity === _environment.activeCameraEntity) {
+				if (hasPointerLock && e.movementX !== undefined) {
+					x += e.movementX;
+					y += e.movementY;
+				} else if (buttonPressed) {
+					x = e.clientX;
+					y = e.clientY;
+				}
+			}
+		}
+
+		function documentMouseMove(e) {
+			if (!_parameters.whenUsed || _environment.entity === _environment.activeCameraEntity) {
+				if (hasPointerLock && e.movementX !== undefined) {
+					x += e.movementX;
+					y += e.movementY;
+				}
+			}
+		}
+
+		function mouseUp() {
+			buttonPressed = false;
+		}
+
+		function documentMouseUp() {
+			if (hasPointerLock) {
+				buttonPressed = false;
+			}
+		}
+
+		function pointerLockChange() {
+			hasPointerLock = !!document.pointerLockElement;
+
+			if (document.pointerLockElement) {
+				// We are attached! No mousedown listener needed any more.
+				_environment.domElement.removeEventListener('mousedown', mouseDownToRequestPointerLock);
+				hasPointerLockSupport = true;
+			} else {
+				// Not attached.
+				_environment.domElement.addEventListener('mousedown', mouseDownToRequestPointerLock);
+			}
+		}
+
+		function setup(parameters, environment) {
+			_environment = environment;
+			_parameters = parameters;
+			button = allButtons.indexOf(parameters.button) - 1;
+			if (button < -1) {
+				button = -1;
+			}
+			var domElement = environment.domElement;
+			if (button === 3) {
+				document.addEventListener('pointerlockchange', pointerLockChange);
+				GameUtils.requestPointerLock();
+				document.addEventListener('mousemove', documentMouseMove);
+				document.addEventListener('mousemove', documentMouseUp);
+				domElement.addEventListener('mousedown', mouseDownToRequestPointerLock);
+			}
+
+			domElement.addEventListener('mousemove', mouseMove);
+			domElement.addEventListener('mousedown', mouseDown);
+			domElement.addEventListener('mouseup', mouseUp);
+
+			angles = new Vector3();
+			var rotation = environment.entity.transformComponent.transform.rotation;
+			rotation.toAngles(angles);
+			_initialAzimuth = angles.y;
+		}
+
+		function update(parameters, environment) {
+			if (x === lastX && y === lastY) {
+				return;
+			}
+			var deltaX = x - lastX;
+			var deltaY = y - lastY;
+			var entity = environment.entity;
+			var rotation = entity.transformComponent.transform.rotation;
+			rotation.toAngles(angles);
+
+			var pitch = angles.x;
+			var yaw = angles.y;
+
+			var maxAscent = parameters.maxAscent * MathUtils.DEG_TO_RAD;
+			var minAscent = parameters.minAscent * MathUtils.DEG_TO_RAD;
+			pitch = MathUtils.clamp(pitch - deltaY * parameters.speed / 200, minAscent, maxAscent);
+
+			var maxAzimuth = parameters.maxAzimuth * MathUtils.DEG_TO_RAD - _initialAzimuth;
+			var minAzimuth = parameters.minAzimuth * MathUtils.DEG_TO_RAD - _initialAzimuth;
+			yaw -= deltaX * parameters.speed / 200;
+			if (parameters.clampAzimuth) {
+				yaw = MathUtils.radialClamp(yaw, minAzimuth, maxAzimuth);
+			}
+
+			rotation.fromAngles(pitch, yaw, 0);
+			entity.transformComponent.setUpdated();
+			lastX = x;
+			lastY = y;
+		}
+
+		function cleanup(parameters, environment) {
+			var domElement = environment.domElement;
+			if (button === 3) {
+				GameUtils.exitPointerLock();
+				document.removeEventListener('mousemove', documentMouseMove);
+				document.removeEventListener('pointerlockchange', pointerLockChange);
+				domElement.removeEventListener('mousedown', mouseDownToRequestPointerLock);
+			}
+			domElement.removeEventListener('mousemove', mouseMove);
+			domElement.removeEventListener('mousedown', mouseDown);
+			domElement.removeEventListener('mouseup', mouseUp);
+		}
+
+		return {
+			setup: setup,
+			update: update,
+			cleanup: cleanup
+		};
+	}
+
+	MouseLookControlScript.externals = {
+		key: 'MouseLookScript',
+		name: 'Mouse Look Control',
+		description: 'Click and drag to change rotation of entity, usually a camera',
+		parameters: [
+			{
+				key: 'whenUsed',
+				type: 'boolean',
+				name: 'When Camera Used',
+				description: 'Script only runs when the camera to which it is added is being used.',
+				'default': true
+			},
+			{
+				key: 'button',
+				name: 'Mouse button',
+				type: 'string',
+				control: 'select',
+				'default': 'Left',
+				options: allButtons
+			},
+			{
+				key: 'speed',
+				name: 'Turn Speed',
+				type: 'float',
+				control: 'slider',
+				'default': 1.0,
+				min: -10,
+				max: 10,
+				scale: 0.1
+			},
+			{
+				key: 'maxAscent',
+				name: 'Max Ascent',
+				type: 'float',
+				control: 'slider',
+				'default': 89.95,
+				min: -89.95,
+				max: 89.95
+			},
+			{
+				key: 'minAscent',
+				name: 'Min Ascent',
+				type: 'float',
+				control: 'slider',
+				'default': -89.95,
+				min: -89.95,
+				max: 89.95
+			}, {
+				key: 'clampAzimuth',
+				'default': false,
+				type: 'boolean'
+			}, {
+				key: 'minAzimuth',
+				description: 'Maximum arc the camera can reach clockwise of the target point',
+				'default': -90,
+				type: 'int',
+				control: 'slider',
+				min: -180,
+				max: 0
+			}, {
+				key: 'maxAzimuth',
+				description: 'Maximum arc the camera can reach counter-clockwise of the target point',
+				'default': 90,
+				type: 'int',
+				control: 'slider',
+				min: 0,
+				max: 180
+			}
+		]
+	};
+
+	module.exports = MouseLookControlScript;
+
+/***/ },
+
+/***/ 484:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Vector3 = __webpack_require__(8);
+
+	var calcVec = new Vector3();
+	var _defaults = {
+		gravity: -9.81,
+		worldFloor: -Infinity,
+		jumpImpulse: 95,
+		accLerp: 0.1,
+		rotLerp: 0.1,
+		modForward: 1,
+		modStrafe: 0.7,
+		modBack: 0.4,
+		modTurn: 0.3
+	};
+
+	/**
+	 * A script for handling basic movement and jumping over a terrain.
+	 * The standard usage of this script will likely also need some input listener and camera handling.
+	 */
+	function GroundBoundMovementScript(properties) {
+		properties = properties || {};
+		for (var key in _defaults) {
+			if (typeof _defaults[key] === 'boolean') {
+				this[key] = properties[key] !== undefined ? properties[key] === true : _defaults[key];
+			} else if (!isNaN(_defaults[key])) {
+				this[key] = !isNaN(properties[key]) ? properties[key] : _defaults[key];
+			} else if (_defaults[key] instanceof Vector3) {
+				this[key] = (properties[key]) ? new Vector3(properties[key]) : new Vector3().set(_defaults[key]);
+			} else {
+				this[key] = properties[key] || _defaults[key];
+			}
+		}
+
+		this.groundContact = 1;
+		this.targetVelocity = new Vector3();
+		this.targetHeading = new Vector3();
+		this.acceleration = new Vector3();
+		this.torque = new Vector3();
+		this.groundHeight = 0;
+		this.groundNormal = new Vector3();
+		this.controlState = {
+			run: 0,
+			strafe: 0,
+			jump: 0,
+			yaw: 0,
+			roll: 0,
+			pitch: 0
+		};
+	}
+
+	/**
+	 * Sets the terrain script. This class requires that the terrain system can provide
+	 * height and normal for a given position when applicable. Without a terrain system the
+	 * script will fallback to the worldFloor height. (Defaults to -Infinity).
+	 * @param {WorldFittedTerrainScript} terrainScript
+	 */
+	GroundBoundMovementScript.prototype.setTerrainSystem = function (terrainScript) {
+		this.terrainScript = terrainScript;
+	};
+
+
+	/**
+	 * Returns the terrain system.
+	 * @returns {WorldFittedTerrainScript} terrainScript
+	 */
+	GroundBoundMovementScript.prototype.getTerrainSystem = function () {
+		return this.terrainScript;
+	};
+
+
+	/**
+	 * Get the terrain height for a given translation. Or if no terrain is present
+	 * return the world floor height.
+	 * @private
+	 * @param {Vector3} translation
+	 * @returns {number} Height of ground
+	 */
+	GroundBoundMovementScript.prototype.getTerrainHeight = function (translation) {
+		var height = this.getTerrainSystem().getTerrainHeightAt(translation);
+		if (height === null) {
+			height = this.worldFloor;
+		}
+		return height;
+	};
+
+	/**
+	 * Get the ground normal for a given translation.
+	 * @private
+	 * @param {Vector3} translation
+	 * @returns {Vector3} The terrain normal vector.
+	 */
+	GroundBoundMovementScript.prototype.getTerrainNormal = function (translation) {
+		return this.getTerrainSystem().getTerrainNormalAt(translation);
+	};
+
+	/**
+	 * Request script to move along its forward axis. Becomes
+	 * backwards with negative amount.
+	 * @param {number} amount
+	 */
+	GroundBoundMovementScript.prototype.applyForward = function (amount) {
+		this.controlState.run = amount;
+	};
+
+	/**
+	 * Applies strafe amount for sideways input.
+	 * @param {number} amount
+	 */
+	GroundBoundMovementScript.prototype.applyStrafe = function (amount) {
+		this.controlState.strafe = amount;
+	};
+
+	/**
+	 * Applies jump input.
+	 * @param {number} amount
+	 */
+	GroundBoundMovementScript.prototype.applyJump = function (amount) {
+		this.controlState.jump = amount;
+	};
+
+	/**
+	 * Applies turn input for rotation around the y-axis.
+	 * @param {number} amount
+	 */
+
+	GroundBoundMovementScript.prototype.applyTurn = function (amount) {
+		this.controlState.yaw = amount;
+	};
+
+	/**
+	 * Called when movement state is updated if requirements for jumping are met.
+	 * @private
+	 * @param [number} up
+	 * @returns {*}
+	 */
+	GroundBoundMovementScript.prototype.applyJumpImpulse = function (up) {
+		if (this.groundContact) {
+			if (this.controlState.jump) {
+				up = this.jumpImpulse;
+				this.controlState.jump = 0;
+			} else {
+				up = 0;
+			}
+		}
+		return up;
+	};
+
+
+	/**
+	 * Modulates the movement state with given circumstances and input
+	 * @private
+	 * @param {number} strafe
+	 * @param {number} up
+	 * @param {number} run
+	 * @returns {Array} The modulated directional movement state
+	 */
+	GroundBoundMovementScript.prototype.applyDirectionalModulation = function (strafe, up, run) {
+		strafe *= this.modStrafe;
+		if (run > 0) {
+			run *= this.modForward;
+		} else {
+			run *= this.modBack;
+		}
+		this.targetVelocity.setDirect(strafe, this.applyJumpImpulse(up), run); // REVIEW: this creates a new object every frame... I recommend to reuse a Vector3 object.
+	};
+
+	/**
+	 * Modulates the rotational movement state.
+	 * @private
+	 * @param {number} pitch
+	 * @param {number} yaw
+	 * @param {number} roll
+	 * @returns {Array}
+	 */
+	GroundBoundMovementScript.prototype.applyTorqueModulation = function (pitch, yaw, roll) {
+		this.targetHeading.setDirect(pitch, yaw * this.modTurn, roll); // REVIEW: this creates a new object every frame... I recommend to reuse a Vector3 object.
+	};
+
+	/**
+	 * Applies the angle of the ground to the directional target velocity. This is to
+	 * prevent increase of absolute velocity when moving up or down sloping terrain.
+	 * @private
+	 */
+
+	GroundBoundMovementScript.prototype.applyGroundNormalInfluence = function () {
+		var groundModX = Math.abs(Math.cos(this.groundNormal.x));
+		var groundModZ = Math.abs(Math.cos(this.groundNormal.z));
+		this.targetVelocity.x *= groundModX;
+		this.targetVelocity.z *= groundModZ;
+	};
+
+
+	/**
+	 * Updates the movement vectors for this frame
+	 * @private
+	 * @param {Vector3} transform
+	 */
+	GroundBoundMovementScript.prototype.updateTargetVectors = function (transform) {
+		this.applyDirectionalModulation(this.controlState.strafe, this.gravity, this.controlState.run);
+		this.targetVelocity.applyPost(transform.rotation);
+		this.applyGroundNormalInfluence();
+		this.applyTorqueModulation(this.controlState.pitch, this.controlState.yaw, this.controlState.roll);
+	};
+
+	/**
+	 * Computes the acceleration for the frame.
+	 * @private
+	 * @param {Entity} entity
+	 * @param {Vector3} current
+	 * @param {Vector3} target
+	 * @returns {Vector3}
+	 */
+	GroundBoundMovementScript.prototype.computeAcceleration = function (entity, current, target) {
+		calcVec.set(target);
+		calcVec.applyPost(entity.transformComponent.transform.rotation);
+		calcVec.sub(current);
+		calcVec.lerp(target, this.accLerp);
+		calcVec.y = target.y; // Ground is not soft...
+		return calcVec;
+	};
+
+
+	/**
+	 * Computes the torque for the frame.
+	 * @private
+	 * @param {Vector3} current
+	 * @param {Vector3} target
+	 * @returns {Vector3}
+	 */
+	GroundBoundMovementScript.prototype.computeTorque = function (current, target) {
+		calcVec.set(target);
+		calcVec.sub(current);
+		calcVec.lerp(target, this.rotLerp);
+		return calcVec;
+	};
+
+	/**
+	 * Updates the velocity vectors for the frame.
+	 * @private
+	 * @param {Entity} entity
+	 */
+	GroundBoundMovementScript.prototype.updateVelocities = function (entity) {
+		var currentVelocity = entity.movementComponent.getVelocity();
+		var currentRotVel = entity.movementComponent.getRotationVelocity();
+		this.acceleration.set(this.computeAcceleration(entity, currentVelocity, this.targetVelocity));
+		this.torque.set(this.computeTorque(currentRotVel, this.targetHeading));
+	};
+
+	/**
+	 * Applies the acceleration to the movement component of the entity
+	 * @private
+	 * @param {Entity} entity
+	 */
+	GroundBoundMovementScript.prototype.applyAccelerations = function (entity) {
+		entity.movementComponent.addVelocity(this.acceleration);
+		entity.movementComponent.addRotationVelocity(this.torque);
+	};
+
+	/**
+	 * Updates the value of the ground normal
+	 * @private
+	 * @param {Transform} transform
+	 */
+	GroundBoundMovementScript.prototype.updateGroundNormal = function (transform) {
+		this.groundNormal.set(this.getTerrainNormal(transform.translation));
+	};
+
+	/**
+	 * Checks if the criteria of ground contact is relevant this frame.
+	 * @private
+	 * @param {Entity} entity
+	 * @param {Transform} transform
+	 */
+	GroundBoundMovementScript.prototype.checkGroundContact = function (entity, transform) {
+		this.groundHeight = this.getTerrainHeight(transform.translation);
+		if (transform.translation.y <= this.groundHeight) {
+			this.groundContact = 1;
+			this.updateGroundNormal(transform);
+		} else {
+			this.groundContact = 0;
+		}
+	};
+
+	/**
+	 * Applies the rules of ground contact
+	 * @private
+	 * @param {Entity} entity
+	 * @param {Transform} transform
+	 */
+	GroundBoundMovementScript.prototype.applyGroundContact = function (entity, transform) {
+		if (this.groundHeight >= transform.translation.y) {
+			transform.translation.y = this.groundHeight;
+			if (entity.movementComponent.velocity.y < 0) {
+				entity.movementComponent.velocity.y = 0;
+			}
+		}
+	};
+
+	/**
+	 * Updates this script with a frame
+	 * @private
+	 * @param {Entity} entity
+	 */
+	GroundBoundMovementScript.prototype.run = function (entity) {
+		var transform = entity.transformComponent.transform;
+		this.checkGroundContact(entity, transform);
+		this.updateTargetVectors(transform);
+		this.updateVelocities(entity);
+		this.applyAccelerations(entity);
+		this.applyGroundContact(entity, transform);
+	};
+
+	module.exports = GroundBoundMovementScript;
+
+/***/ },
+
+/***/ 485:
+/***/ function(module, exports, __webpack_require__) {
+
+	var MathUtils = __webpack_require__(9);
+
+	/**
+	 * Handles the height data for a heightmap and
+	 * provides functions for getting elevation at given coordinates.
+	 * @param {Array} matrixData The height data. Needs to be power of two.
+	 */
+	function HeightMapBoundingScript(matrixData) {
+		this.matrixData = matrixData;
+		this.width = matrixData.length - 1;
+	}
+
+	/**
+	 * Gets the terrain matrix data
+	 * @returns {Array} the height data matrix
+	 */
+	HeightMapBoundingScript.prototype.getMatrixData = function () {
+		return this.matrixData;
+	};
+
+	// get a height at point from matrix
+	HeightMapBoundingScript.prototype.getPointInMatrix = function (x, y) {
+		return this.matrixData[x][y];
+	};
+
+	// get the value at the precise integer (x, y) coordinates
+	HeightMapBoundingScript.prototype.getAt = function (x, y) {
+		if (x < 0 || x > this.width || y < 0 || y > this.width) {
+			return 0;
+		}
+		else {
+			return this.getPointInMatrix(x, y);
+		}
+	};
+
+	// get the interpolated value
+	HeightMapBoundingScript.prototype.getInterpolated = function (x, y) {
+		var valueLeftUp = this.getAt(Math.ceil(x), Math.ceil(y));
+		var valueLeftDown = this.getAt(Math.ceil(x), Math.floor(y));
+		var valueRightUp = this.getAt(Math.floor(x), Math.ceil(y));
+		var valueRightDown = this.getAt(Math.floor(x), Math.floor(y));
+
+		var fracX = x - Math.floor(x);
+		var fracY = y - Math.floor(y);
+
+		var upAvg = valueLeftUp * fracX + valueRightUp * (1 - fracX);
+		var downAvg = valueLeftDown * fracX + valueRightDown * (1 - fracX);
+
+		var totalAvg = upAvg * fracY + downAvg * (1 - fracY);
+
+		return totalAvg;
+	};
+
+	HeightMapBoundingScript.prototype.getTriangleAt = function (x, y) {
+		var xc = Math.ceil(x);
+		var xf = Math.floor(x);
+		var yc = Math.ceil(y);
+		var yf = Math.floor(y);
+
+		var fracX = x - xf;
+		var fracY = y - yf;
+
+		var p1 = { x: xf, y: yc, z: this.getAt(xf, yc) };
+		var p2 = { x: xc, y: yf, z: this.getAt(xc, yf) };
+
+		var p3;
+
+		if (fracX < 1 - fracY) {
+			p3 = { x: xf, y: yf, z: this.getAt(xf, yf) };
+		} else {
+			p3 = { x: xc, y: yc, z: this.getAt(xc, yc) };
+		}
+		return [p1, p2, p3];
+	};
+
+	// get the exact height of the triangle at point
+	HeightMapBoundingScript.prototype.getPreciseHeight = function (x, y) {
+		var tri = this.getTriangleAt(x, y);
+		var find = MathUtils.barycentricInterpolation(tri[0], tri[1], tri[2], { x: x, y: y, z: 0 });
+		return find.z;
+	};
+
+	HeightMapBoundingScript.prototype.run = function (entity) {
+		var translation = entity.transformComponent.transform.translation;
+		translation.y = this.getInterpolated(translation.z, translation.x);
+	};
+
+	module.exports = HeightMapBoundingScript;
+
+/***/ },
+
+/***/ 486:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Vector3 = __webpack_require__(8);
+	var ParticleSystemUtils = __webpack_require__(210);
+	var Material = __webpack_require__(30);
+	var ShaderLib = __webpack_require__(46);
+	var Quad = __webpack_require__(28);
+	var BoundingSphere = __webpack_require__(13);
+
+	/**
+	 * This script makes an entity shine with some lensflare effect.
+	 */
+	function LensFlareScript() {
+		var lightEntity;
+		var flares = [];
+		var world;
+		var isActive;
+		var quadData;
+		var lightColor;
+		var globalIntensity;
+		var spriteTxSize = 64;
+		var flareGeometry;
+		var textures = {};
+
+		var textureShapes = {
+			splash: { trailStartRadius: 25, trailEndRadius: 0 },
+			ring: [
+				{ fraction: 0.00, value: 0 },
+				{ fraction: 0.70, value: 0 },
+				{ fraction: 0.92, value: 1 },
+				{ fraction: 0.98, value: 0 }
+			],
+			dot: [
+				{ fraction: 0.00, value: 1 },
+				{ fraction: 0.30, value: 0.75 },
+				{ fraction: 0.50, value: 0.45 },
+				{ fraction: 0.65, value: 0.21 },
+				{ fraction: 0.75, value: 0.1 },
+				{ fraction: 0.98, value: 0 }
+			],
+			bell: [
+				{ fraction: 0.00, value: 1 },
+				{ fraction: 0.15, value: 0.75 },
+				{ fraction: 0.30, value: 0.5 },
+				{ fraction: 0.40, value: 0.25 },
+				{ fraction: 0.75, value: 0.05 },
+				{ fraction: 0.98, value: 0 }
+			],
+			none: [
+				{ fraction: 0, value: 1 },
+				{ fraction: 1, value: 0 }
+			]
+		};
+
+		function generateTextures(txSize) {
+			textures.size = txSize;
+			textures.splash = ParticleSystemUtils.createSplashTexture(512, { trailStartRadius: 25, trailEndRadius: 0 });
+			textures.ring = ParticleSystemUtils.createFlareTexture(txSize, { steps: textureShapes.ring, startRadius: txSize / 4, endRadius: txSize / 2 });
+			textures.dot = ParticleSystemUtils.createFlareTexture(txSize, { steps: textureShapes.dot, startRadius: 0, endRadius: txSize / 2 });
+			textures.bell = ParticleSystemUtils.createFlareTexture(txSize, { steps: textureShapes.bell, startRadius: 0, endRadius: txSize / 2 });
+			textures['default'] = ParticleSystemUtils.createFlareTexture(txSize, { steps: textureShapes.none, startRadius: 0, endRadius: txSize / 2 });
+		}
+
+		function createFlareQuads(quads, lightColor, systemScale, edgeDampen, edgeScaling) {
+			for (var i = 0; i < quads.length; i++) {
+				var quad = quads[i];
+				flares.push(
+					new FlareQuad(
+						lightColor,
+						quad.tx,
+						quad.displace,
+						quad.size,
+						quad.intensity * globalIntensity,
+						systemScale,
+						edgeDampen,
+						edgeScaling,
+						textures,
+						world
+					)
+				);
+			}
+			return flares;
+		}
+
+		function removeFlareQuads(quads) {
+			for (var i = 0; i < quads.length; i++) {
+				quads[i].quad.removeFromWorld();
+			}
+		}
+
+		function setup(args, ctx) {
+			globalIntensity = args.intensity;
+			flareGeometry = new FlareGeometry(args.edgeRelevance * 100);
+			var baseSize = spriteTxSize;
+			if (args.highRes) {
+				baseSize *= 4;
+			}
+			if (textures.size !== baseSize) {
+				generateTextures(baseSize);
+			}
+			flares = [];
+			lightEntity = ctx.entity;
+
+			world = ctx.world;
+			isActive = false;
+
+			lightColor = [args.color[0], args.color[1], args.color[2], 1];
+
+			quadData = [
+				{ size: 2.53, tx: 'bell', intensity: 0.70, displace: 1 },
+				{ size: 0.53, tx: 'dot',  intensity: 0.70, displace: 1 },
+				{ size: 0.83, tx: 'bell', intensity: 0.20, displace: 0.8 },
+				{ size: 0.40, tx: 'ring', intensity: 0.10, displace: 0.6 },
+				{ size: 0.30, tx: 'bell', intensity: 0.10, displace: 0.4 },
+				{ size: 0.60, tx: 'bell', intensity: 0.10, displace: 0.3 },
+				{ size: 0.30, tx: 'dot',  intensity: 0.10, displace: 0.15 },
+				{ size: 0.22, tx: 'ring', intensity: 0.03, displace: -0.25 },
+				{ size: 0.36, tx: 'dot',  intensity: 0.05, displace: -0.5 },
+				{ size: 0.80, tx: 'ring', intensity: 0.10, displace: -0.8 },
+				{ size: 0.86, tx: 'bell', intensity: 0.20, displace: -1.1 },
+				{ size: 1.30, tx: 'ring', intensity: 0.05, displace: -1.5 }
+			];
+
+			ctx.bounds = new BoundingSphere(ctx.entity.transformComponent.sync().worldTransform.translation, 0);
+		}
+
+		function cleanup(/*args, ctx*/) {
+			removeFlareQuads(flares);
+			flares = [];
+		}
+
+		function lateUpdate(args, ctx) {
+			ctx.bounds.center.copy(ctx.entity.transformComponent.sync().worldTransform.translation);
+			if (ctx.activeCameraEntity.cameraComponent.camera.contains(ctx.bounds)) {
+				flareGeometry.updateFrameGeometry(lightEntity, ctx.activeCameraEntity);
+				if (!isActive) {
+					flares = createFlareQuads(quadData, lightColor, args.scale, args.edgeDampen, args.edgeScaling);
+					isActive = true;
+				}
+
+				for (var i = 0; i < flares.length; i++) {
+					flares[i].updatePosition(flareGeometry);
+				}
+			// # REVIEW: if the entity has ever been visible then the FlareQuads
+			// are staying. Is it a problem with removeFlareQuads?
+			} else {
+				if (isActive) {
+					removeFlareQuads(flares);
+					isActive = false;
+				}
+			}
+		}
+
+		return {
+			setup: setup,
+			lateUpdate: lateUpdate,
+			cleanup: cleanup
+		};
+	}
+
+	LensFlareScript.externals = {
+		key: 'LensFlareScript',
+		name: 'Lens Flare Script',
+		description: 'Makes an entity shine with some lensflare effect.',
+		parameters: [{
+			key: 'scale',
+			name: 'Scale',
+			type: 'float',
+			description: 'Scale of flare quads',
+			control: 'slider',
+			'default': 1,
+			min: 0.01,
+			max: 2
+		}, {
+			key: 'intensity',
+			name: 'Intensity',
+			type: 'float',
+			description: 'Intensity of Effect',
+			control: 'slider',
+			'default': 1,
+			min: 0.01,
+			// REVIEW: why 2 for so many of these params? can they be normalized
+			//! AT: [0, 1] might be the normal domain but the upper allowed bound is 2 because it allows for superbright/superfancy lens flares
+			max: 2
+		}, {
+			key: 'edgeRelevance',
+			name: 'Edge Relevance',
+			type: 'float',
+			description: 'How much the effect cares about being centered or not',
+			control: 'slider',
+			'default': 0,
+			min: 0,
+			max: 2
+		}, {
+			key: 'edgeDampen',
+			name: 'Edge Dampening',
+			type: 'float',
+			description: 'Intensity adjustment by distance from center',
+			control: 'slider',
+			'default': 0.2,
+			min: 0,
+			max: 1
+		}, {
+			key: 'edgeScaling',
+			name: 'Edge Scaling',
+			type: 'float',
+			description: 'Scale adjustment by distance from center',
+			control: 'slider',
+			'default': 0,
+			min: -2,
+			max: 2
+		}, {
+			key: 'color',
+			name: 'Color',
+			type: 'vec3',
+			description: 'Effect Color',
+			control: 'color',
+			'default': [
+				0.8,
+				0.75,
+				0.7
+			]
+		}, {
+			key: 'highRes',
+			name: 'High Resolution',
+			type: 'boolean',
+			description: 'Intensity of Effect',
+			control: 'checkbox',
+			'default': false
+		}]
+	};
+
+	function FlareGeometry(edgeRelevance) {
+		this.camRot = null;
+		this.distance = 0;
+		this.offset = 0;
+		this.centerRatio = 0;
+		this.positionVector = new Vector3();
+		this.distanceVector = new Vector3();
+		this.centerVector = new Vector3();
+		this.displacementVector = new Vector3();
+		this.edgeRelevance = edgeRelevance;
+	}
+
+	FlareGeometry.prototype.updateFrameGeometry = function (lightEntity, cameraEntity) {
+		this.camRot = cameraEntity.transformComponent.sync().transform.rotation;
+		this.centerVector.set(cameraEntity.transformComponent.sync().worldTransform.translation);
+		this.displacementVector.set(lightEntity.transformComponent.sync().worldTransform.translation);
+		this.displacementVector.sub(this.centerVector);
+		this.distance = this.displacementVector.length();
+		this.distanceVector.setDirect(0, 0, -this.distance);
+		this.distanceVector.applyPost(this.camRot);
+		this.centerVector.add(this.distanceVector);
+		this.positionVector.set(this.centerVector);
+		this.displacementVector.set(lightEntity.transformComponent.sync().worldTransform.translation);
+		this.displacementVector.sub(this.positionVector);
+		this.offset = this.displacementVector.length();
+		var positionVectorLength = this.positionVector.length();
+		if (positionVectorLength) {
+			this.centerRatio = 1 - (this.offset * this.edgeRelevance) / this.positionVector.length();
+		} else {
+			this.centerRatio = 1 - (this.offset * this.edgeRelevance);
+		}
+		this.centerRatio = Math.max(0, this.centerRatio);
+	};
+
+	function FlareQuad(lightColor, tx, displace, size, intensity, systemScale, edgeDampen, edgeScaling, textures, world) {
+		this.sizeVector = new Vector3(size, size, size);
+		this.sizeVector.scale(systemScale);
+		this.positionVector = new Vector3();
+		this.flareVector = new Vector3();
+		this.intensity = intensity;
+		this.displace = displace;
+		this.color = [lightColor[0] * intensity, lightColor[1] * intensity, lightColor[2] * intensity, 1];
+		this.edgeDampen = edgeDampen;
+		this.edgeScaling = edgeScaling;
+		var material = new Material(ShaderLib.uber, 'flareShader');
+
+		material.uniforms.materialEmissive = this.color;
+		material.uniforms.materialDiffuse = [0, 0, 0, 1];
+		material.uniforms.materialAmbient = [0, 0, 0, 1];
+		material.uniforms.materialSpecular = [0, 0, 0, 1];
+
+		var texture = textures[tx];
+
+		material.setTexture('DIFFUSE_MAP', texture);
+		material.setTexture('EMISSIVE_MAP', texture);
+		material.blendState.blending = 'AdditiveBlending';
+		material.blendState.blendEquation = 'AddEquation';
+		material.blendState.blendSrc = 'OneFactor';
+		material.blendState.blendDst = 'OneFactor';
+		material.depthState.enabled = false;
+		material.depthState.write = false;
+		material.cullState.enabled = false;
+
+		var meshData = new Quad(1, 1);
+		var entity = world.createEntity(meshData, material);
+		entity.meshRendererComponent.cullMode = 'Never';
+		entity.addToWorld();
+
+		this.material = material;
+		this.quad = entity;
+	}
+
+	FlareQuad.prototype.updatePosition = function (flareGeometry) {
+		this.flareVector.set(flareGeometry.displacementVector);
+		this.positionVector.set(flareGeometry.positionVector);
+		this.flareVector.scale(this.displace);
+		this.positionVector.add(this.flareVector);
+
+		this.material.uniforms.materialEmissive = [
+			this.color[0] * flareGeometry.centerRatio * this.edgeDampen,
+			this.color[1] * flareGeometry.centerRatio * this.edgeDampen,
+			this.color[2] * flareGeometry.centerRatio * this.edgeDampen,
+			1
+		];
+
+		var scaleFactor = flareGeometry.distance + flareGeometry.distance * flareGeometry.centerRatio * this.edgeScaling;
+
+		var quadTransform = this.quad.transformComponent.transform;
+		quadTransform.scale.set(this.sizeVector);
+		quadTransform.scale.scale(scaleFactor);
+		quadTransform.rotation.set(flareGeometry.camRot);
+		quadTransform.translation.set(this.positionVector);
+
+		this.quad.transformComponent.setUpdated();
+	};
+
+	module.exports = LensFlareScript;
+
+/***/ },
+
+/***/ 487:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Scripts = __webpack_require__(4);
+	var OrbitCamControlScript = __webpack_require__(365);
+	var PanCamControlScript = __webpack_require__(488);
+	var ObjectUtils = __webpack_require__(6);
+
+	function OrbitNPan() {
+		var orbitScript = Scripts.create(OrbitCamControlScript);
+		var panScript = Scripts.create(PanCamControlScript);
+		function setup(parameters, environment, goo) {
+			parameters.touchMode = 'Double'; // should alaways be 2 touch mode for panning
+			orbitScript.setup(parameters, environment, goo);
+			panScript.setup(parameters, environment, goo);
+		}
+		function update(parameters, environment, goo) {
+			panScript.update(parameters, environment, goo);
+			orbitScript.update(parameters, environment, goo);
+		}
+		function cleanup(parameters, environment, goo) {
+			panScript.cleanup(parameters, environment, goo);
+			orbitScript.cleanup(parameters, environment, goo);
+		}
+		function argsUpdated(parameters, environment, goo) {
+			panScript.argsUpdated(parameters, environment, goo);
+			orbitScript.argsUpdated(parameters, environment, goo);
+		}
+
+		return {
+			setup: setup,
+			cleanup: cleanup,
+			update: update,
+			argsUpdated: argsUpdated
+		};
+	}
+
+	var orbitParams = OrbitCamControlScript.externals.parameters;
+	var panParams = PanCamControlScript.externals.parameters;
+
+	// Make sure we don't change parameters for the other scripts
+	var params = ObjectUtils.deepClone(orbitParams.concat(panParams.slice(1)));
+
+	// Remove the panSpeed and touchMode parameters
+	for (var i = params.length - 1; i >= 0; i--) {
+		var param = params[i];
+		if (param.key === 'panSpeed' || param.key === 'touchMode') {
+			params.splice(i, 1);
+		}
+	}
+
+	for (var i = 0; i < params.length; i++) {
+		var param = params[i];
+		switch (param.key) {
+			case 'dragButton':
+				param.default = 'Left';
+				break;
+			case 'panButton':
+				param.default = 'Right';
+				break;
+			case 'panSpeed':
+				param.default = 1;
+				break;
+			case 'touchMode':
+				param.default = 'Double';
+				break;
+		}
+	}
+
+	OrbitNPan.externals = {
+		key: 'OrbitNPanControlScript',
+		name: 'Orbit and Pan Control',
+		description: 'This is a combo of orbitcamcontrolscript and pancamcontrolscript',
+		parameters:	params
+	};
+
+	module.exports = OrbitNPan;
+
+/***/ },
+
+/***/ 488:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Vector3 = __webpack_require__(8);
+	var Renderer = __webpack_require__(123);
+	var SystemBus = __webpack_require__(44);
+	var Camera = __webpack_require__(120);
+
+	function PanCamScript() {
+		var fwdVector, leftVector, calcVector, calcVector2;
+		var lookAtPoint;
+		var mouseState;
+		var listeners;
+		var tmpOverride = false;
+
+		function getTouchCenter(touches) {
+			var cx = 0;
+			var cy = 0;
+
+			var x1 = touches[0].clientX;
+			var y1 = touches[0].clientY;
+			if (touches.length >= 2) {
+				var x2 = touches[1].clientX;
+				var y2 = touches[1].clientY;
+				cx = (x1 + x2) / 2;
+				cy = (y1 + y2) / 2;
+			} else {
+				cx = x1;
+				cy = y1;
+			}
+			return [cx, cy];
+		}
+
+		function setup(parameters, environment) {
+			argsUpdated(parameters, environment);
+
+			lookAtPoint = environment.goingToLookAt;
+			fwdVector = Vector3.UNIT_Y.clone();
+			leftVector = Vector3.UNIT_X.clone().negate();
+			calcVector = new Vector3();
+			calcVector2 = new Vector3();
+			environment.translation = environment.entity.transformComponent.transform.translation.clone();
+
+			var renderer = environment.world.gooRunner.renderer;
+			environment.devicePixelRatio = renderer._useDevicePixelRatio && window.devicePixelRatio ?
+				window.devicePixelRatio / renderer.svg.currentScale : 1;
+
+			mouseState = {
+				x: 0,
+				y: 0,
+				ox: 0,
+				oy: 0,
+				dx: 0,
+				dy: 0,
+				down: false
+			};
+			listeners = {
+				mousedown: function (event) {
+					if (!parameters.whenUsed || environment.entity === environment.activeCameraEntity) {
+						var button = event.button;
+						if (button === 0) {
+							if (event.altKey) {
+								button = 2;
+							} else if (event.shiftKey) {
+								button = 1;
+							}
+						}
+						if (button === environment.panButton || environment.panButton === -1) {
+							mouseState.down = true;
+							var x = (event.offsetX !== undefined) ? event.offsetX : event.layerX;
+							var y = (event.offsetY !== undefined) ? event.offsetY : event.layerY;
+							mouseState.ox = mouseState.x = x;
+							mouseState.oy = mouseState.y = y;
+						}
+					}
+				},
+				mouseup: function (event) {
+					var button = event.button;
+					if (button === 0) {
+						if (event.altKey) {
+							button = 2;
+						} else if (event.shiftKey) {
+							button = 1;
+						}
+					}
+					mouseState.down = false;
+					mouseState.dx = mouseState.dy = 0;
+				},
+				mousemove: function (event) {
+					if (!parameters.whenUsed || environment.entity === environment.activeCameraEntity) {
+						if (mouseState.down) {
+							var x = (event.offsetX !== undefined) ? event.offsetX : event.layerX;
+							var y = (event.offsetY !== undefined) ? event.offsetY : event.layerY;
+							mouseState.x = x;
+							mouseState.y = y;
+							environment.dirty = true;
+						}
+					}
+				},
+				mouseleave: function (/*event*/) {
+					mouseState.down = false;
+					mouseState.ox = mouseState.x;
+					mouseState.oy = mouseState.y;
+				},
+				touchstart: function (event) {
+					if (!parameters.whenUsed || environment.entity === environment.activeCameraEntity) {
+						mouseState.down = (parameters.touchMode === 'Any' || (parameters.touchMode === 'Single' && event.targetTouches.length === 1) || (parameters.touchMode === 'Double' && event.targetTouches.length === 2));
+						if (!mouseState.down) { return; }
+
+						var center = getTouchCenter(event.targetTouches);
+						mouseState.ox = mouseState.x = center[0];
+						mouseState.oy = mouseState.y = center[1];
+					}
+				},
+				touchmove: function (event) {
+					if (!parameters.whenUsed || environment.entity === environment.activeCameraEntity) {
+						if (!mouseState.down) { return; }
+
+						var center = getTouchCenter(event.targetTouches);
+						mouseState.x = center[0];
+						mouseState.y = center[1];
+						environment.dirty = true;
+					}
+				},
+				touchend: function (/*event*/) {
+					mouseState.down = false;
+					mouseState.ox = mouseState.x;
+					mouseState.oy = mouseState.y;
+				}
+			};
+			for (var event in listeners) {
+				environment.domElement.addEventListener(event, listeners[event]);
+			}
+			environment.dirty = true;
+		}
+
+		function update(parameters, environment) {
+			if (!environment.dirty) {
+				return;
+			}
+			mouseState.dx = mouseState.x - mouseState.ox;
+			mouseState.dy = mouseState.y - mouseState.oy;
+			if (mouseState.dx === 0 && mouseState.dy === 0 && !tmpOverride) {
+				environment.dirty = !!environment.lookAtPoint;
+				return;
+			}
+
+			tmpOverride = false;
+
+			if (parameters.invertX) {
+				mouseState.dx = -mouseState.dx;
+			}
+			if (parameters.invertY) {
+				mouseState.dy = -mouseState.dy;
+			}
+
+			mouseState.ox = mouseState.x;
+			mouseState.oy = mouseState.y;
+
+			var mainCam = Renderer.mainCamera;
+
+			var entity = environment.entity;
+			var transform = entity.transformComponent.transform;
+
+			var camera = entity.cameraComponent.camera;
+			if (lookAtPoint && mainCam) {
+				if (lookAtPoint.equals(mainCam.translation)) {
+					return;
+				}
+				var width = environment.viewportWidth / environment.devicePixelRatio;
+				var height = environment.viewportHeight / environment.devicePixelRatio;
+				mainCam.getScreenCoordinates(lookAtPoint, width, height, calcVector);
+				calcVector.subDirect(
+					mouseState.dx,/// (environment.viewportWidth/devicePixelRatio),
+					mouseState.dy,/// (environment.viewportHeight/devicePixelRatio),
+					0
+				);
+				mainCam.getWorldCoordinates(
+					calcVector.x,
+					calcVector.y,
+					width,
+					height,
+					calcVector.z,
+					calcVector
+				);
+				lookAtPoint.set(calcVector);
+			} else {
+				calcVector.set(fwdVector).scale(mouseState.dy);
+				calcVector2.set(leftVector).scale(mouseState.dx);
+
+				//! schteppe: use world coordinates for both by default?
+				//if (parameters.screenMove) {
+					// In the case of screenMove, we normalize the camera movement
+					// to the near plane instead of using pixels. This makes the parallel
+					// camera map mouse world movement to camera movement 1-1
+				if (entity.cameraComponent && entity.cameraComponent.camera) {
+					var camera = entity.cameraComponent.camera;
+					calcVector.scale((camera._frustumTop - camera._frustumBottom) / environment.viewportHeight);
+					calcVector2.scale((camera._frustumRight - camera._frustumLeft) / environment.viewportWidth);
+				}
+				//}
+				calcVector.add(calcVector2);
+				calcVector.applyPost(transform.rotation);
+				//if (!parameters.screenMove) {
+					// panSpeed should be 1 in the screenMove case, to make movement sync properly
+				if (camera.projectionMode === Camera.Perspective) {
+					// RB: I know, very arbitrary but looks ok
+					calcVector.scale(parameters.panSpeed * 20);
+				} else {
+					calcVector.scale(parameters.panSpeed);
+				}
+				environment.translation.add(calcVector);
+				entity.transformComponent.setTranslation(environment.translation);
+				environment.dirty = false;
+			}
+			SystemBus.emit('goo.cameraPositionChanged', {
+				translation: transform.translation.toArray(),
+				lookAtPoint: lookAtPoint ? lookAtPoint.toArray() : null,
+				id: entity.id
+			});
+		}
+
+		function cleanup(parameters, environment) {
+			for (var event in listeners) {
+				environment.domElement.removeEventListener(event, listeners[event]);
+			}
+		}
+
+		function argsUpdated(parameters, environment) {
+			environment.panButton = ['Any', 'Left', 'Middle', 'Right'].indexOf(parameters.panButton) - 1;
+			if (environment.panButton < -1) {
+				environment.panButton = -1;
+			}
+			environment.dirty = true;
+			tmpOverride = true;
+		}
+
+		return {
+			setup: setup,
+			update: update,
+			cleanup: cleanup,
+			argsUpdated: argsUpdated
+		};
+	}
+
+	PanCamScript.externals = {
+		key: 'PanCamControlScript',
+		name: 'PanCamera Control',
+		description: 'Enables camera to pan around a point in 3D space using the mouse',
+		parameters: [{
+			key: 'whenUsed',
+			type: 'boolean',
+			name: 'When Camera Used',
+			description: 'Script only runs when the camera to which it is added is being used.',
+			'default': true
+		}, {
+			key: 'panButton',
+			name: 'Pan button',
+			description: 'Only pan with this button',
+			type: 'string',
+			control: 'select',
+			'default': 'Any',
+			options: ['Any', 'Left', 'Middle', 'Right']
+		}, {
+			key: 'touchMode',
+			description: 'Number of fingers needed to trigger panning.',
+			type: 'string',
+			control: 'select',
+			'default': 'Double',
+			options: ['Any', 'Single', 'Double']
+		}, {
+			key: 'panSpeed',
+			type: 'float',
+			'default': 1,
+			scale: 0.01
+		}/*, {
+			key: 'screenMove',
+			type: 'boolean',
+			'default': false,
+			description: 'Syncs camera movement with mouse world position 1-1, needed for parallel camera.'
+		}*/]
+	};
+
+	module.exports = PanCamScript;
+
+/***/ },
+
+/***/ 489:
+/***/ function(module, exports) {
+
+	function PickAndRotateScript() {
+		var gooRunner;
+		var validPick;
+		var args, ctx;
+
+		var mouseState;
+
+		function getButton(event) {
+			var pressedButton = event.button;
+			if (pressedButton === 0) {
+				if (event.altKey) {
+					pressedButton = 2;
+				} else if (event.shiftKey) {
+					pressedButton = 1;
+				}
+			}
+			return pressedButton;
+		}
+
+		function mouseDown(event) {
+			if (args.disable) { return; }
+
+			var pressedButton = getButton(event.domEvent);
+			if ((pressedButton === ctx.dragButton || ctx.dragButton === -1) && event.entity) {
+				validPick = false;
+				event.entity.traverseUp(function (entity) {
+					if (entity === ctx.entity) {
+						validPick = true;
+						return false;
+					}
+				});
+
+				if (validPick) {
+					onPressEvent(event);
+				}
+			}
+		}
+
+		function onPressEvent(event) {
+			mouseState.x = event.x;
+			mouseState.y = event.y;
+
+			mouseState.oldX = mouseState.x;
+			mouseState.oldY = mouseState.y;
+
+			mouseState.down = true;
+		}
+
+		function mouseMove(event) {
+			mouseState.oldX = mouseState.x;
+			mouseState.oldY = mouseState.y;
+
+			mouseState.x = event.clientX || event.touches[0].clientX;
+			mouseState.y = event.clientY || event.touches[0].clientY;
+
+			if (validPick && mouseState.down) {
+				var deltaX = mouseState.x - mouseState.oldX;
+				var deltaY = mouseState.y - mouseState.oldY;
+
+				mouseState.ax += deltaX;
+				mouseState.ay += deltaY;
+
+				updateRotation();
+			}
+		}
+
+		function updateRotation(){
+			ctx.entity.transformComponent.transform.rotation.setIdentity();
+			ctx.entity.transformComponent.transform.rotation.rotateX(mouseState.ay / 300 * args.yMultiplier);
+			ctx.entity.transformComponent.transform.rotation.rotateY(mouseState.ax / 200 * args.xMultiplier);
+			ctx.entity.transformComponent.setUpdated();
+		}
+
+		function mouseUp() {
+			mouseState.down = false;
+		}
+
+		function argsUpdated(_args, _ctx) {
+			args = _args;
+			ctx = _ctx;
+			ctx.dragButton = ['Any', 'Left', 'Middle', 'Right'].indexOf(args.dragButton) - 1;
+			if (ctx.dragButton < -1) {
+				ctx.dragButton = -1;
+			}
+			updateRotation();
+		}
+
+		function setup(_args, _ctx) {
+			gooRunner = _ctx.world.gooRunner;
+
+			gooRunner.addEventListener('mousedown', mouseDown);
+			gooRunner.addEventListener('touchstart', mouseDown);
+			gooRunner.renderer.domElement.addEventListener('mousemove', mouseMove);
+			gooRunner.renderer.domElement.addEventListener('touchmove', mouseMove);
+			gooRunner.renderer.domElement.addEventListener('mouseup', mouseUp);
+			gooRunner.renderer.domElement.addEventListener('touchend', mouseUp);
+
+			mouseState = {
+				down: false,
+				x: 0,
+				y: 0,
+				oldX: 0,
+				oldY: 0,
+				ax: 0,
+				ay: 0
+			};
+			argsUpdated(_args, _ctx);
+		}
+
+		function update(/* args, ctx */) {}
+
+		function cleanup(args, ctx) {
+			ctx.domElement.removeEventListener('mousemove', mouseMove);
+			ctx.domElement.removeEventListener('touchmove', mouseMove);
+			ctx.domElement.removeEventListener('mouseup', mouseUp);
+			ctx.domElement.removeEventListener('touchend', mouseUp);
+			gooRunner.removeEventListener('mousedown', mouseDown);
+			gooRunner.removeEventListener('touchstart', mouseDown);
+		}
+
+
+		return {
+			setup: setup,
+			update: update,
+			cleanup: cleanup,
+			argsUpdated: argsUpdated
+		};
+	}
+
+	PickAndRotateScript.externals = {
+		key: 'PickAndRotateScript',
+		name: 'Pick and Rotate',
+		description: 'Enables pick-drag-rotating entities',
+		parameters: [{
+			key: 'disable',
+			description: 'Prevent rotation. For preventing this script programmatically.',
+			type: 'boolean',
+			'default': false
+		}, {
+			key: 'dragButton',
+			description: 'Button to enable dragging',
+			'default': 'Any',
+			options: ['Any', 'Left', 'Middle', 'Right'],
+			type: 'string',
+			control: 'select'
+		}, {
+			key: 'xMultiplier',
+			description: 'Horizontal rotation multiplier',
+			'default': 1,
+			type: 'float',
+			control: 'slider',
+			min: -4,
+			max: 4
+		}, {
+			key: 'yMultiplier',
+			description: 'Vertical rotation multiplier',
+			'default': 1,
+			type: 'float',
+			control: 'slider',
+			min: -4,
+			max: 4
+		}]
+	};
+
+	module.exports = PickAndRotateScript;
+
+/***/ },
+
+/***/ 490:
+/***/ function(module, exports) {
+
+	/**
+	 * Checks for collisions against a set of `collidables` and repositions the host object accordingly.
+	 * This script uses the PolyK library which is not part of the engine; make sure you add it manually.<br>
+	 * @example-link http://code.gooengine.com/latest/visual-test/goo/addons/PolyBoundingScript/PolyBoundingScript-vtest.html Working example
+	 * @param {Array} collidables An array of `collidables` - objects with a bounding polygon on the XZ-plane, a top and a bottom Y coordinate
+	 * @param {Array<number>} collidables[].poly An array of XZ coordinates representing the bounding polygon of the `collidable`
+	 * @param {number} collidables[].bottom The bottom Y coordinate of the collidable
+	 * @param {number} collidables[].top The top Y coordinate of the collidable
+	 */
+	function PolyBoundingScript(collidables) {
+		this.collidables = collidables || [];
+	}
+
+	/**
+	 * Adds a `collidable`
+	 * @param {Object} collidable `Collidable` to add
+	 * @param {Array<number>} collidables[].poly An array of XZ coordinates representing the bounding polygon of the `collidable`
+	 * @param {number} collidables[].bottom The bottom Y coordinate of the collidable
+	 * @param {number} collidables[].top The top Y coordinate of the collidable
+	 */
+	PolyBoundingScript.prototype.addCollidable = function (collidable) {
+		this.collidables.push(collidable);
+	};
+
+	/**
+	 * Removes all `collidables` that contain the given point (x, y, z)
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} z
+	 */
+	PolyBoundingScript.prototype.removeAllAt = function (x, y, z) {
+		this.collidables = this.collidables.filter(function (collidable) {
+			if (collidable.bottom <= z && collidable.top >= z) {
+				return !window.PolyK.ContainsPoint(collidable.poly, x, y);
+			}
+		});
+	};
+
+	/**
+	 * Checks if a point is inside any collidable
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} z
+	 */
+	PolyBoundingScript.prototype.inside = function (x, y, z) {
+		for (var i = 0; i < this.collidables.length; i++) {
+			var collidable = this.collidables[i];
+
+			if (collidable.bottom <= y && collidable.top >= y) {
+				if (window.PolyK.ContainsPoint(collidable.poly, x, z)) {
+					return window.PolyK.ClosestEdge(collidable.poly, x, z);
+				}
+			}
+		}
+	};
+
+	/**
+	 * The standard `run` routine of the script. Checks for collisions and repositions the host entity accordingly.
+	 * The entity's coordinates are obtained from the translation of its transformComponent. All collisions are performed against these coordinates only.
+	 * @param {Entity} entity
+	 */
+	PolyBoundingScript.prototype.run = function (entity) {
+		var transformComponent = entity.transformComponent;
+		var translation = transformComponent.transform.translation;
+
+		for (var i = 0; i < this.collidables.length; i++) {
+			var collidable = this.collidables[i];
+
+			if (collidable.bottom <= translation.y && collidable.top >= translation.y) {
+				if (window.PolyK.ContainsPoint(collidable.poly, translation.x, translation.z)) {
+					var pointOutside = window.PolyK.ClosestEdge(
+						collidable.poly,
+						translation.x,
+						translation.z
+					);
+
+					translation.x = pointOutside.point.x;
+					translation.z = pointOutside.point.y;
+					transformComponent.setUpdated();
+
+					return;
+				}
+			}
+		}
+	};
+
+	module.exports = PolyBoundingScript;
+
+/***/ },
+
+/***/ 491:
+/***/ function(module, exports) {
+
+	function RotationScript() {
+		var mouseState, actualState, entity;
+
+		function setup(parameters, env) {
+			mouseState = {
+				x: 0,
+				y: 0
+			};
+
+			actualState = {
+				x: 0,
+				y: 0
+			};
+
+			entity = env.entity;
+
+			document.addEventListener('mousemove', onMouseMove);
+		}
+
+		function update(parameters/*, env*/) {
+			actualState.x += (mouseState.x - actualState.x) * parameters.fraction;
+			actualState.y += (mouseState.y - actualState.y) * parameters.fraction;
+
+			entity.setRotation(actualState.y / 200, actualState.x / 200, 0);
+		}
+
+		function onMouseMove(e) {
+			mouseState.x = e.x;
+			mouseState.y = e.y;
+		}
+
+		function cleanup(/*parameters, env*/) {
+			document.removeEventListener('mousemove', onMouseMove);
+		}
+		return {
+			setup: setup,
+			update: update,
+			cleanup: cleanup
+		};
+	}
+
+	RotationScript.externals = {
+		key: 'RotationScript',
+		name: 'Mouse Rotation',
+		description: '',
+		parameters: [{
+			key: 'fraction',
+			name: 'Speed',
+			'default': 0.01,
+			type: 'float',
+			control: 'slider',
+			min: 0.01,
+			max: 1
+		}]
+	};
+
+	module.exports = RotationScript;
+
+/***/ },
+
+/***/ 492:
+/***/ function(module, exports, __webpack_require__) {
+
+	var ComponentHandler = __webpack_require__(88);
+	var ScriptComponent = __webpack_require__(353);
+	var RSVP = __webpack_require__(55);
+	var ObjectUtils = __webpack_require__(6);
+	var PromiseUtils = __webpack_require__(54);
+	var SystemBus = __webpack_require__(44);
+	var Scripts = __webpack_require__(4);
+	var ScriptUtils = __webpack_require__(5);
+
+	/**
+	 * @hidden
+	 */
+	function ScriptComponentHandler() {
+		ComponentHandler.apply(this, arguments);
+		this._type = 'ScriptComponent';
+	}
+
+	ScriptComponentHandler.prototype = Object.create(ComponentHandler.prototype);
+	ScriptComponentHandler.prototype.constructor = ScriptComponentHandler;
+	ComponentHandler._registerClass('script', ScriptComponentHandler);
+
+	ScriptComponentHandler.ENGINE_SCRIPT_PREFIX = 'GOO_ENGINE_SCRIPTS/';
+
+	ScriptComponentHandler.prototype._prepare = function (/*config*/) {};
+
+	ScriptComponentHandler.prototype._create = function () {
+		return new ScriptComponent();
+	};
+
+	ScriptComponentHandler.prototype.update = function (entity, config, options) {
+		var that = this;
+
+		return ComponentHandler.prototype.update.call(this, entity, config, options)
+		.then(function (component) {
+			if (!component) { return; }
+
+			return RSVP.all(ObjectUtils.map(config.scripts, function (instanceConfig) {
+				return that._updateScriptInstance(component, instanceConfig, options);
+			}, null, 'sortValue'))
+			.then(function (scripts) {
+				component.scripts = scripts;
+				return component;
+			});
+		});
+	};
+
+	ScriptComponentHandler.prototype._updateScriptInstance = function (component, instanceConfig, options) {
+		var that = this;
+
+		return this._createOrLoadScript(component, instanceConfig)
+		.then(function (script) {
+			var newParameters = instanceConfig.options || {};
+			if (script.parameters) {
+				ObjectUtils.defaults(newParameters, script.parameters);
+			}
+
+			if (script.externals && script.externals.parameters) {
+				ScriptUtils.fillDefaultValues(newParameters, script.externals.parameters);
+			}
+
+			var newScript = null;
+			if (script.context) {
+				newScript = script;
+				if (newScript.parameters) {
+					// Re-use the parameters object, but clean it before updating it.
+					var keys = Object.keys(newScript.parameters);
+					for (var i=0; i<keys.length; i++) {
+						delete newScript.parameters[keys[i]];
+					}
+				} else {
+					newScript.parameters = {};
+				}
+			} else {
+				// We need to duplicate the script so we can have multiple
+				// similar scripts with different parameters.
+				newScript = Object.create(script);
+				newScript.instanceId = instanceConfig.id;
+				newScript.parameters = {};
+				newScript.enabled = false;
+			}
+
+			return that._setParameters(
+				newScript.parameters,
+				newParameters,
+				script.externals,
+				options
+			)
+			.then(function () {
+				if (newScript.argsUpdated && newScript.context) {
+					newScript.argsUpdated(newScript.parameters, newScript.context, window.goo);
+				}
+			})
+			.then(ObjectUtils.constant(newScript));
+		});
+	};
+
+	/**
+	 * Depending on the reference specified in the script instance, creates an
+	 * engine script or loads the referenced script.
+	 *
+	 * @param {object} instanceConfig
+	 *        JSON configuration of the script instance. Should contain the
+	 *        "scriptRef" property which refers to the script which is to be
+	 *        loaded.
+	 *
+	 * @returns {Promise}
+	 *         A promise which is resolved with the referenced script.
+	 *
+	 * @private
+	 */
+	ScriptComponentHandler.prototype._createOrLoadScript = function (component, instanceConfig) {
+		var ref = instanceConfig.scriptRef;
+		var isEngineScript = ref.indexOf(ScriptComponentHandler.ENGINE_SCRIPT_PREFIX) === 0;
+
+		if (isEngineScript) {
+			return this._createOrLoadEngineScript(component, instanceConfig);
+		} else {
+			return this._createOrLoadCustomScript(component, instanceConfig);
+		}
+	};
+
+	/**
+	 * Creates or loads an engine script. If the component already has an instance
+	 * of that script, it will be returned.
+	 *
+	 * @param {ScriptComponent} component
+	 * @param {object} instanceConfig
+	 *
+	 * @return {Promise}
+	 * @private
+	 */
+	ScriptComponentHandler.prototype._createOrLoadEngineScript = function (component, instanceConfig) {
+		var existingScript = this._findScriptInstance(component, instanceConfig.id);
+		var prefix = ScriptComponentHandler.ENGINE_SCRIPT_PREFIX;
+
+		if (existingScript) {
+			return PromiseUtils.resolve(existingScript);
+		}
+
+		return this._createEngineScript(instanceConfig.scriptRef.slice(prefix.length));
+	};
+
+	/**
+	 * Creates or loads a custom script. If the component already has an instance
+	 * of that script with the same body, it will be returned.
+	 *
+	 * @param {ScriptComponent} component
+	 * @param {object} instanceConfig
+	 *
+	 * @return {Promise}
+	 * @private
+	 */
+	ScriptComponentHandler.prototype._createOrLoadCustomScript = function (component, instanceConfig) {
+		var that = this;
+		var ref = instanceConfig.scriptRef;
+
+		// Need to load the script (note that we are not reloading yet) so we
+		// can compare the new body with the old one.
+		return this._load(ref).then(function (script) {
+			var existingScript = that._findScriptInstance(component, instanceConfig.id);
+
+			if (existingScript && existingScript.body === script.body) {
+				return existingScript;
+			}
+
+			// New script or the body was changed so reload the script.
+			return that._load(ref, { reload: true });
+		});
+	};
+
+	/**
+	 * Searches the specified component to try to find the specified script instance.
+	 *
+	 * @param {ScriptComponent} component
+	 *        The component which is to be searched.
+	 * @param {string} instanceId
+	 *        The identifier of the script instance which is to be found.
+	 *
+	 * @return {object} The script which was found, or undefined if none was found.
+	 * @private
+	 */
+	ScriptComponentHandler.prototype._findScriptInstance = function (component, instanceId) {
+		return ObjectUtils.find(component.scripts, function (script) {
+			return script.instanceId === instanceId;
+		});
+	};
+
+	/**
+	 * Creates a new instance of one of the default scripts provided by the
+	 * engine.
+	 *
+	 * @param {Object} scriptName
+	 *		The name of the script which is to be created.
+		*
+		* @returns {RSVP.Promise}
+		*		A promise which is resolved with the new script.
+		*
+		* @private
+		*/
+	ScriptComponentHandler.prototype._createEngineScript = function (scriptName) {
+		var script = Scripts.create(scriptName);
+		if (!script) {
+			throw new Error('Unrecognized script name');
+		}
+
+		script.id = ScriptComponentHandler.ENGINE_SCRIPT_PREFIX + scriptName;
+		script.enabled = false;
+
+		SystemBus.emit('goo.scriptExternals', {
+			id: script.id,
+			externals: script.externals
+		});
+
+		return PromiseUtils.resolve(script);
+	};
+
+	/**
+	 * Sets the parameters of a script instance from the json configuration.
+	 *
+	 * @param {object} parameters
+	 *        Parameters of the new script instance which are to be filled
+	 *        out according to the json config and the script externals.
+	 * @param {object}
+	 *        json configuration from which the parameter values are to be
+	 *        extracted.
+	 * @param {object} externals
+	 *        Parameter descriptor as defined in a script's external.parameters
+	 *        object.
+	 * @param options
+	 *        DynamicLoader options.
+	 *
+	 * @returns {Promise}
+	 *
+	 * @private
+	 */
+	ScriptComponentHandler.prototype._setParameters = function (parameters, config, externals, options) {
+		var that = this;
+
+		// is externals ever falsy?
+		if (!externals || !externals.parameters) {
+			return PromiseUtils.resolve();
+		}
+
+		var promises = externals.parameters.map(function (external) {
+			return that._setParameter(parameters, config[external.key], external, options);
+		});
+
+		parameters.enabled = config.enabled !== false;
+
+		return RSVP.all(promises);
+	};
+
+	/**
+	 * Sets a script parameter from the json configuration.
+	 *
+	 * @param {object} parameters
+	 *        Script parameters object on which the parameter is to be set.
+	 * @param {object} config
+	 *        JSON configuration from which the parameter values are to be
+	 *        extracted.
+	 * @param {object} external
+	 *        Parameter descriptor (type, key, etc).
+	 * @param {object} options
+	 *        DynamicLoader options.
+	 *
+	 * @returns {Promise}
+	 *          A promise which is resolved when the parameter has been set.
+	 *
+	 * @private
+	 */
+	ScriptComponentHandler.prototype._setParameter = function (parameters, config, external, options) {
+		var that = this;
+		var key = external.key;
+		var type = external.type;
+
+		function setParam(value) {
+			parameters[key] = value;
+			return PromiseUtils.resolve();
+		}
+
+		function getInvalidParam() {
+			if (external.default === undefined) {
+				return ObjectUtils.deepClone(ScriptUtils.DEFAULTS_BY_TYPE[type]);
+			} else {
+				return ObjectUtils.deepClone(external.default);
+			}
+		}
+
+		function setRefParam() {
+			if (!config || config.enabled === false) {
+				return setParam(null);
+			}
+
+			// Get wrapped ref (i.e. entityRef) and if none exists it is because
+			// we got a direct ref.
+			var ref = config[type + 'Ref'] || config;
+
+			return that._load(ref, options).then(setParam);
+		}
+
+		if (!ScriptUtils.TYPE_VALIDATORS[type](config)) {
+			return setParam(getInvalidParam());
+		} else if (type === 'entity') {
+			// For entities, because they can depend on themselves, we don't
+			// wait for the load to be completed. It will eventually resolve
+			// and the parameter will be set.
+			setRefParam();
+			return PromiseUtils.resolve();
+		} else if (ScriptUtils.isRefType(type)) {
+			return setRefParam();
+		} else {
+			return setParam(ObjectUtils.clone(config));
+		}
+	};
+
+	module.exports = ScriptComponentHandler;
+
+
+/***/ },
+
+/***/ 493:
+/***/ function(module, exports, __webpack_require__) {
+
+	var ConfigHandler = __webpack_require__(85);
+	var RSVP = __webpack_require__(55);
+	var PromiseUtils = __webpack_require__(54);
+	var ObjectUtils = __webpack_require__(6);
+	var ArrayUtils = __webpack_require__(86);
+	var SystemBus = __webpack_require__(44);
+	var ScriptUtils = __webpack_require__(5);
+	var Scripts = __webpack_require__(4);
+
+	var DEPENDENCY_LOAD_TIMEOUT = 6000;
+
+	/**
+	* 	* @private
+	*/
+	function ScriptHandler() {
+		ConfigHandler.apply(this, arguments);
+		this._scriptElementsByURL = new Map();
+		this._bodyCache = {};
+		this._dependencyPromises = {};
+		this._currentScriptLoading = null;
+		this._addGlobalErrorListener();
+	}
+
+	ScriptHandler.prototype = Object.create(ConfigHandler.prototype);
+	ScriptHandler.prototype.constructor = ScriptHandler;
+	ConfigHandler._registerClass('script', ScriptHandler);
+
+	/**
+	 * Creates a script data wrapper object to be used in the engine
+	 */
+	ScriptHandler.prototype._create = function () {
+		return {
+			externals: {},
+			setup: null,
+			fixedUpdate: null,
+			lateUpdate: null,
+			update: null,
+			run: null,
+			cleanup: null,
+			parameters: {},
+			argsUpdated: null,
+			name: null
+		};
+	};
+
+
+	/**
+	 * Remove this script from the cache, and runs the cleanup method of the script.
+	 * @param {string} ref the script guid
+	 */
+	ScriptHandler.prototype._remove = function (ref) {
+		var script = this._objects.get(ref);
+		if (script && script.cleanup && script.context) {
+			try {
+				script.cleanup(script.parameters, script.context, window.goo);
+			} catch (e) {
+				// Some cleanup error
+			}
+		}
+		this._objects.delete(ref);
+		delete this._bodyCache[ref];
+	};
+
+	var updateId = 1; // Ugly hack to prevent devtools from not updating its scripts
+
+	/**
+	 * Update a user-defined script (not a script available in the engine).
+	 * If the new body (in the data model config) differs from the cached body,
+	 * the script will be reloaded (by means of a script tag).
+	 *
+	 * @param {Object} script the cached engine script object
+	 * @param {Object} config the data model config
+	 */
+	ScriptHandler.prototype._updateFromCustom = function (script, config) {
+		// No change, do nothing
+		if (this._bodyCache[config.id] === config.body) { return script; }
+
+		delete script.errors;
+		this._bodyCache[config.id] = config.body;
+
+		// delete the old script tag and add a new one
+		var oldScriptElement = document.getElementById(ScriptHandler.DOM_ID_PREFIX + config.id);
+		if (oldScriptElement) {
+			oldScriptElement.parentNode.removeChild(oldScriptElement);
+		}
+
+		// create this script collection if it does not exist yet
+		if (!window._gooScriptFactories) {
+			// this holds script factories in 'compiled' form
+			window._gooScriptFactories = {};
+		}
+
+
+		// get a script factory in string form
+		var scriptFactoryStr = [
+			'//# sourceURL=goo://goo-custom-scripts/' + encodeURIComponent(config.name.replace(' ', '_')) + '.js?v=' + (updateId++),
+			'',
+			'// ' + config.name,
+			'',
+			'// <![CDATA[',
+			"window._gooScriptFactories['" + config.id + "'] = function () {",
+			config.body,
+			' var obj = {',
+			'  externals: {}',
+			' };',
+			' if (typeof parameters !== "undefined") {',
+			'  obj.externals.parameters = parameters;',
+			' }',
+			' if (typeof argsUpdated !== "undefined") {',
+			'  obj.argsUpdated = argsUpdated;',
+			' }',
+			' if (typeof setup !== "undefined") {',
+			'  obj.setup = setup;',
+			' }',
+			' if (typeof cleanup !== "undefined") {',
+			'  obj.cleanup = cleanup;',
+			' }',
+			' if (typeof update !== "undefined") {',
+			'  obj.update = update;',
+			' }',
+			' if (typeof fixedUpdate !== "undefined") {',
+			'  obj.fixedUpdate = fixedUpdate;',
+			' }',
+			' if (typeof lateUpdate !== "undefined") {',
+			'  obj.lateUpdate = lateUpdate;',
+			' }',
+			' if (typeof enter !== "undefined") {',
+			'  obj.enter = enter;',
+			' }',
+			' if (typeof exit !== "undefined") {',
+			'  obj.exit = exit;',
+			' }',
+			' return obj;',
+			'};',
+			'// ]]>'
+		].join('\n');
+
+		// create the element and add it to the page so the user can debug it
+		// addition and execution of the script happens synchronously
+		var newScriptElement = document.createElement('script');
+		newScriptElement.id = ScriptHandler.DOM_ID_PREFIX + config.id;
+		newScriptElement.innerHTML = scriptFactoryStr;
+		newScriptElement.async = false;
+		this._currentScriptLoading = config.id;
+
+		var parentElement = this.world.gooRunner.renderer.domElement.parentElement || document.body;
+		parentElement.appendChild(newScriptElement);
+
+		var scriptFactory = window._gooScriptFactories[config.id];
+		if (scriptFactory) {
+			try {
+				var newScript = scriptFactory();
+				script.id = config.id;
+				ScriptHandler.validateParameters(newScript, script);
+				script.setup = newScript.setup;
+				script.update = newScript.update;
+				script.fixedUpdate = newScript.fixedUpdate;
+				script.lateUpdate = newScript.lateUpdate;
+				script.cleanup = newScript.cleanup;
+				script.enter = newScript.enter;
+				script.exit = newScript.exit;
+				script.argsUpdated = newScript.argsUpdated;
+				script.parameters = {};
+				script.enabled = false;
+				script.body = config.body;
+			} catch (e) {
+				var err = {
+					message: e.toString()
+				};
+				// TODO Test if this works across browsers
+				/**/
+				if (e instanceof Error) {
+					var lineNumbers = e.stack.split('\n')[1].match(/(\d+):\d+\)$/);
+					if (lineNumbers) {
+						err.line = parseInt(lineNumbers[1], 10) - 1;
+					}
+				}
+				/**/
+				setError(script, err);
+			}
+			this._currentScriptLoading = null;
+		}
+		// generate names from external variable names
+		if (script.externals) {
+			ScriptUtils.fillDefaultNames(script.externals.parameters);
+		}
+
+		return script;
+	};
+
+	/**
+	 * Adds a reference pointing to the specified custom script into the specified
+	 * script element/node.
+	 *
+	 * @param {HTMLScriptElement} scriptElement
+	 *		The script element into which a reference is to be added.
+	 * @param {string} scriptId
+	 *		The identifier of the custom script whose reference is to be added.
+	 */
+	function addReference(scriptElement, scriptId) {
+		if (!scriptElement.scriptRefs) {
+			scriptElement.scriptRefs = [scriptId];
+			return;
+		}
+
+		var index = scriptElement.scriptRefs.indexOf(scriptId);
+		if (index === -1) {
+			scriptElement.scriptRefs.push(scriptId);
+		}
+	}
+
+
+	/**
+	 * Removes a reference to the specified custom script from the specified
+	 * script element/node.
+	 *
+	 * @param {HTMLScriptElement} scriptElement
+	 *		The script element from which the reference is to be removed.
+	 * @param {string} scriptId
+	 *		The identifier of the custom script whose reference is to be removed.
+	 */
+	function removeReference(scriptElement, scriptId) {
+		if (!scriptElement.scriptRefs) {
+			return;
+		}
+
+		ArrayUtils.remove(scriptElement.scriptRefs, scriptId);
+	}
+
+	/**
+	 * Gets whether the specified script element/node has any references to
+	 * custom scripts.
+	 *
+	 * @param {HTMLScriptElement} scriptElement
+	 *		The script element which is to be checked for references.
+	 *
+	 * @returns {boolean}
+	 */
+	function hasReferences(scriptElement) {
+		return scriptElement.scriptRefs && scriptElement.scriptRefs.length > 0;
+	}
+
+
+	/**
+	 * Gets whether the specified script element has a reference to the specified
+	 * custom script.
+	 *
+	 * @param {HTMLScriptElement} scriptElement
+	 *		The script element/node which is to be checked.
+	 * @param {string} scriptId
+	 *		The identifier of the custom script which is to be checked.
+	 *
+	 * @returns {boolean}
+	 */
+	function hasReferenceTo(scriptElement, scriptId) {
+		return scriptElement.scriptRefs && scriptElement.scriptRefs.indexOf(scriptId) > -1;
+	}
+
+	/**
+	 * Gets all the script elements that refer to the specified custom script.
+	 *
+	 * @param {string} scriptId
+	 *		The identifier of the custom script whose dependencies are to be
+	 *		returned.
+	 *
+	 * @returns {Array.<HTMLScriptElement>}
+	 */
+	function getReferringDependencies(scriptId) {
+		var dependencies = [];
+		var scriptElements = document.querySelectorAll('script');
+
+		for (var i = 0; i < scriptElements.length; ++i) {
+			var scriptElement = scriptElements[i];
+			if (hasReferenceTo(scriptElement, scriptId)) {
+				dependencies.push(scriptElement);
+			}
+		}
+
+		return dependencies;
+	}
+
+	/**
+	 * Update a script that is from the engine. Checks if the class name has changed
+	 * and if so, creates a new script object from the new class.
+	 * @param {Object} script needs to have a className property
+	 * @param {Object} config data model config
+	 * @deprecated
+	 */
+	ScriptHandler.prototype._updateFromClass = function (script, config) {
+		if (!script.externals || script.externals.name !== config.className) {
+			var newScript = Scripts.create(config.className);
+			if (!newScript) {
+				throw new Error('Unrecognized script name');
+			}
+			script.id = config.id;
+			script.externals = newScript.externals;
+			script.setup = newScript.setup;
+			script.update = newScript.update;
+			script.fixedUpdate = newScript.fixedUpdate;
+			script.lateUpdate = newScript.lateUpdate;
+			script.run = newScript.run;
+			script.cleanup = newScript.cleanup;
+			script.argsUpdated = newScript.argsUpdated;
+			script.enter = newScript.enter;
+			script.exit = newScript.exit;
+			script.parameters = newScript.parameters || {};
+			script.enabled = false;
+
+			// generate names from external variable names
+			ScriptUtils.fillDefaultNames(script.externals.parameters);
+		}
+
+		return script;
+	};
+
+	/**
+	 * Loads an external javascript lib as a dependency to this script (if it's
+	 * not already loaded). If the dependency fails to load, an error is set
+	 * on the script.
+	 * @param {Object} script config
+	 * @param {string} url location of the javascript lib
+	 * @param {string} scriptId the guid of the script
+	 * @returns {RSVP.Promise} a promise that resolves when the dependency is loaded
+	 */
+	ScriptHandler.prototype._addDependency = function (script, url, scriptId) {
+		var that = this;
+
+		// check if element already exists
+		// it might have been loaded by some other script first
+
+		// does this work if the same script component/script reference the same script more than once?
+		var scriptElem = document.querySelector('script[src="' + url + '"]');
+		if (scriptElem) {
+			addReference(scriptElem, scriptId);
+			return this._dependencyPromises[url] || PromiseUtils.resolve();
+		}
+
+		scriptElem = document.createElement('script');
+		scriptElem.src = url;
+		scriptElem.setAttribute('data-script-id', scriptId);
+		scriptElem.isDependency = true;
+		scriptElem.async = false;
+
+		this._scriptElementsByURL.set(url, scriptElem);
+		addReference(scriptElem, scriptId);
+
+		var promise = loadExternalScript(script, scriptElem, url)
+			.then(function () {
+				delete that._dependencyPromises[url];
+			});
+
+		this._dependencyPromises[url] = promise;
+
+		return promise;
+	};
+
+	ScriptHandler.prototype._update = function (ref, config, options) {
+		var that = this;
+
+		return ConfigHandler.prototype._update.call(this, ref, config, options)
+		.then(function (script) {
+			if (!script) { return; }
+
+			var addDependencyPromises = [];
+
+			if (isCustomScript(config) && config.dependencies) {
+				delete script.dependencyErrors;
+
+				// Get all the script HTML elements which refer to the current
+				// script. As we add dependencies, we remove the script elements
+				// which are still needed. After everything, we remove the
+				// reference to the current script from the remaining ones.
+				var scriptsElementsToRemove = getReferringDependencies(config.id);
+
+				ObjectUtils.forEach(config.dependencies, function (dependencyConfig) {
+					var url = dependencyConfig.url;
+
+					// If the dependency being added is already loaded in a script
+					// element we remove it from the array of script elements to remove
+					// because we still need it.
+					var neededScriptElement = ArrayUtils.find(scriptsElementsToRemove, function (scriptElement) {
+						return scriptElement.src === url;
+					});
+					if (neededScriptElement) {
+						ArrayUtils.remove(scriptsElementsToRemove, neededScriptElement);
+					}
+
+					addDependencyPromises.push(that._addDependency(script, url, config.id));
+				}, null, 'sortValue');
+
+				// Remove references to the current script from all the script
+				// elements that are not needed anymore.
+				ObjectUtils.forEach(scriptsElementsToRemove, function (scriptElement) {
+					removeReference(scriptElement, config.id);
+				});
+			}
+
+			var parentElement = that.world.gooRunner.renderer.domElement.parentElement || document.body;
+
+			ObjectUtils.forEach(config.dependencies, function (dependency) {
+				var scriptElement = that._scriptElementsByURL.get(dependency.url);
+				if (scriptElement) {
+					parentElement.appendChild(scriptElement);
+				}
+			}, null, 'sortValue');
+
+			return RSVP.all(addDependencyPromises)
+			.then(function () {
+				if (isEngineScript(config)) {
+					that._updateFromClass(script, config, options);
+				} else if (isCustomScript(config)) {
+					that._updateFromCustom(script, config, options);
+				}
+
+				// Let the world (e.g. Create) know that there are new externals so
+				// that things (e.g. UI) can get updated.
+				if (config.body) {
+					SystemBus.emit('goo.scriptExternals', {
+						id: config.id,
+						externals: script.externals
+					});
+				}
+
+				script.name = config.name;
+
+				if (script.errors || script.dependencyErrors) {
+					SystemBus.emit('goo.scriptError', {
+						id: ref,
+						errors: script.errors,
+						dependencyErrors: script.dependencyErrors
+					});
+					return script;
+				}
+				else {
+					SystemBus.emit('goo.scriptError', { id: ref, errors: null });
+				}
+
+				ObjectUtils.extend(script.parameters, config.options);
+
+				// Remove any script HTML elements that are not needed by any
+				// script.
+				removeDeadScriptElements();
+
+				return script;
+			});
+		});
+	};
+
+	/**
+	 * Gets whether the specified configuration object refers to a built-in
+	 * engine script (i.e. not a custom script).
+	 *
+	 * @param {object} config
+	 *        The configuration object which is to be checked.
+	 *
+	 * @returns {Boolean}
+	 */
+	function isEngineScript(config) {
+		return Boolean(config.className);
+	}
+
+	/**
+	 * Gets whether the specified configuration object refers to a custom script
+	 * script (i.e. not a built-in engine script).
+	 *
+	 * @param {object} config
+	 *        The configuration object which is to be checked.
+	 *
+	 * @returns {Boolean}
+	 */
+	function isCustomScript(config) {
+		return !isEngineScript(config) && config.body !== undefined;
+	}
+
+	/**
+	 * Removes all the script HTML elements that are not needed by any script
+	 * anymore (i.e. have no references to scripts).
+	 */
+	function removeDeadScriptElements() {
+		var scriptElements = document.querySelectorAll('script');
+
+		for (var i = 0; i < scriptElements.length; ++i) {
+			var scriptElement = scriptElements[i];
+			if (scriptElement.isDependency && !hasReferences(scriptElement) && scriptElement.parentNode) {
+				scriptElement.parentNode.removeChild(scriptElement);
+			}
+		}
+	}
+
+	/**
+	 * Add a global error listener that catches script errors, and tries to match
+	 * them to scripts loaded with this handler. If an error is registered, the
+	 * script is reset and an error message is appended to it.
+	 * @private
+	 *
+	 */
+	ScriptHandler.prototype._addGlobalErrorListener = function () {
+		var that = this;
+		window.addEventListener('error', function (evt) {
+			if (evt.filename) {
+				var scriptElem = document.querySelector('script[src="' + evt.filename + '"]');
+				if (scriptElem) {
+					var scriptId = scriptElem.getAttribute('data-script-id');
+					var script = that._objects.get(scriptId);
+					if (script) {
+						var error = {
+							message: evt.message,
+							line: evt.lineno,
+							file: evt.filename
+						};
+						setError(script, error);
+					}
+					scriptElem.parentNode.removeChild(scriptElem);
+				}
+			}
+			if (that._currentScriptLoading) {
+				var oldScriptElement = document.getElementById(ScriptHandler.DOM_ID_PREFIX + that._currentScriptLoading);
+				if (oldScriptElement) {
+					oldScriptElement.parentNode.removeChild(oldScriptElement);
+				}
+				delete window._gooScriptFactories[that._currentScriptLoading];
+				var script = that._objects.get(that._currentScriptLoading);
+				var error = {
+					message: evt.message,
+					line: evt.lineno - 1
+				};
+				setError(script, error);
+				that._currentScriptLoading = null;
+			}
+		});
+	};
+
+	/**
+	 * Load an external script
+	 */
+	function loadExternalScript(script, scriptElem, url) {
+		return PromiseUtils.createPromise(function (resolve) {
+			var timeoutHandler;
+			var handled = false;
+
+			scriptElem.onload = function () {
+				resolve();
+				if (timeoutHandler) { clearTimeout(timeoutHandler); }
+			};
+
+			function fireError(message) {
+				var err = {
+					message: message,
+					file: url
+				};
+				setError(script, err);
+
+				// remove element if it was attached to the document
+				if (scriptElem.parentNode) {
+					scriptElem.parentNode.removeChild(scriptElem);
+				}
+				resolve();
+			}
+
+			scriptElem.onerror = function (e) {
+				handled = true;
+				if (timeoutHandler) { clearTimeout(timeoutHandler); }
+				console.error(e);
+				fireError('Could not load dependency ' + url);
+			};
+
+			if (!handled) {
+				handled = true;
+				// Some errors (notably https/http security ones) don't fire onerror, so we have to wait
+				timeoutHandler = setTimeout(function () {
+					fireError('Loading dependency ' + url + ' failed (time out)');
+				}, DEPENDENCY_LOAD_TIMEOUT);
+			}
+		});
+	}
+
+	/**
+	 * Validates every property of a parameter defined by a user script.
+	 * Exposed as a static method only for testing purposes.
+	 * @hidden
+	 * @param parameter
+	 * @returns {{message: string}|undefined} May return an error
+	 */
+	 ScriptHandler.validateParameter = function validateParameter(parameter) {
+		for (var i = 0; i < ScriptUtils.PROPERTY_TYPES.length; ++i) {
+			var entry = ScriptUtils.PROPERTY_TYPES[i];
+			var propValue = parameter[entry.prop];
+			var isPropDefined = typeof propValue !== 'undefined';
+
+			var msgStart = 'Property "' + entry.prop + '" must be ';
+
+			if (entry.mustBeDefined || isPropDefined) {
+				var validator = ScriptUtils.TYPE_VALIDATORS[entry.type];
+				var allowedValues = entry.getAllowedValues ? entry.getAllowedValues(parameter) : null;
+
+				if (isPropDefined && entry.minLength && propValue.length < entry.minLength) {
+					return { message: msgStart + 'longer than ' + (entry.minLength - 1) };
+				}
+
+				if (allowedValues && allowedValues.indexOf(propValue) === -1) {
+					return { message: msgStart + 'one of: ' + allowedValues.join(', ') };
+				}
+
+				if (!validator(propValue)) {
+					return { message: msgStart + 'of type ' + entry.type };
+				}
+			}
+		}
+	};
+
+	/**
+	 * Validates every parameter defined in the `externalParameters` collection by a user script.
+	 * Exposed as a static method only for testing purposes.
+	 * @hidden
+	 * @param script
+	 * @param outScript
+	 */
+	ScriptHandler.validateParameters = function validateParameters(script, outScript) {
+		var errors = script.errors || [];
+		if (typeof script.externals !== 'object') {
+			outScript.externals = {};
+			return;
+		}
+		var externals = script.externals;
+		if (externals.parameters && !(externals.parameters instanceof Array)) {
+			errors.push('externals.parameters must be an array');
+		}
+		if (errors.length) {
+			outScript.errors = errors;
+			return;
+		}
+
+		outScript.externals.parameters = [];
+
+		if (!externals.parameters) {
+			return;
+		}
+
+		var duplicateChecker = {};
+		for (var i = 0; i < externals.parameters.length; i++) {
+			var parameter = externals.parameters[i];
+
+			var maybeError = ScriptHandler.validateParameter(parameter);
+			if (maybeError) {
+				errors.push(maybeError);
+			}
+
+			// create cares about this, in order to build the control panel for the script
+			if (parameter['default'] === null || parameter['default'] === undefined) {
+				parameter['default'] = ScriptUtils.DEFAULTS_BY_TYPE[parameter.type];
+			}
+
+			if (parameter.key && duplicateChecker[parameter.key]) {
+				errors.push({
+					message: 'Duplicate parameter key: "' + parameter.key + '"'
+				});
+			}
+			duplicateChecker[parameter.key] = true;
+
+			outScript.externals.parameters.push(parameter);
+		}
+		if (errors.length) {
+			outScript.errors = errors;
+		}
+	};
+
+	/**
+	 * Flag a script with an error. The script will be disabled.
+	 * @param {Object} script
+	 * @param {Object} error
+	 * @param {string} error.message
+	 * @param {number} [error.line]
+	 * @param {string} [error.file]
+	 */
+	function setError(script, error) {
+		if (error.file) {
+			var message = error.message;
+			if (error.line) {
+				message += ' - on line ' + error.line; //! AT: this isn't used
+			}
+			script.dependencyErrors = script.dependencyErrors || {};
+			script.dependencyErrors[error.file] = error;
+		} else {
+			script.errors = script.errors || [];
+			var message = error.message;
+			if (error.line) {
+				message += ' - on line ' + error.line; //! AT: this isn't used
+			}
+			script.errors.push(error);
+
+			script.setup = null;
+			script.update = null;
+			script.fixedUpdate = null;
+			script.lateUpdate = null;
+			script.run = null;
+			script.cleanup = null;
+			script.argsUpdated = null;
+			script.enter = null;
+			script.exit = null;
+
+			script.parameters = {};
+			script.enabled = false;
+		}
+	}
+
+	ScriptHandler.DOM_ID_PREFIX = '_script_';
+
+	module.exports = ScriptHandler;
+
+
+/***/ },
+
+/***/ 494:
+/***/ function(module, exports, __webpack_require__) {
+
+	__webpack_require__(493);
+	__webpack_require__(492);
+
+/***/ },
+
+/***/ 495:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Scripts = __webpack_require__(4);
+
+	var scripts = {
+		OrbitCamControlScript: __webpack_require__(365),
+		OrbitNPanControlScript: __webpack_require__(487),
+		FlyControlScript: __webpack_require__(481),
+		AxisAlignedCamControlScript: __webpack_require__(477),
+		PanCamScript: __webpack_require__(488),
+		MouseLookControlScript: __webpack_require__(483),
+		WasdControlScript: __webpack_require__(482),
+		ButtonScript: __webpack_require__(479),
+		PickAndRotateScript: __webpack_require__(489),
+		LensFlareScript: __webpack_require__(486)
+	};
+
+	for (var key in scripts) {
+		Scripts.register(scripts[key]);
+	}
+
+
+/***/ },
+
+/***/ 496:
+/***/ function(module, exports) {
+
+	/**
+	 * Bounds the host entity to a height map computed from a set of terrain points
+	 * @param {Array<Number>} elevationData The array of height points given as a flat array
+	 */
+	function SparseHeightMapBoundingScript(elevationData) {
+		this.elevationData = elevationData;
+	}
+
+	/**
+	 * Returns the height of the closest terrain point to the given coordinates
+	 * @param x
+	 * @param z
+	 * @returns {number} The height of the closest terrain point
+	 */
+	SparseHeightMapBoundingScript.prototype.getClosest = function (x, z) {
+		var minDist = Number.MAX_VALUE;
+		var minIndex = -1;
+		for (var i = 0; i < this.elevationData.length; i += 3) {
+			var dist =
+				Math.pow(this.elevationData[i + 0] - x, 2) +
+				Math.pow(this.elevationData[i + 2] - z, 2);
+			if (dist < minDist) {
+				minDist = dist;
+				minIndex = i;
+			}
+		}
+		return this.elevationData[minIndex + 1];
+	};
+
+	SparseHeightMapBoundingScript.prototype.run = function (entity) {
+		var translation = entity.transformComponent.transform.translation;
+		var closest = this.getClosest(translation.x, translation.z);
+		var diff = translation.y - closest;
+		translation.y -= diff * 0.1;
+	};
+
+	module.exports = SparseHeightMapBoundingScript;
+
+/***/ },
+
+/***/ 497:
+/***/ function(module, exports, __webpack_require__) {
+
+	var HeightMapBoundingScript = __webpack_require__(485);
+	var Vector3 = __webpack_require__(8);
+
+	var calcVec1 = new Vector3();
+	var calcVec2 = new Vector3();
+
+	var _defaults = {
+		minX: 0,
+		maxX: 100,
+		minY: 0,
+		maxY: 50,
+		minZ: 0,
+		maxZ: 100
+	};
+
+	function validateTerrainProperties(properties, heightMatrix) {
+		if (properties.minX > properties.maxX) {
+			throw new Error({ name: 'Terrain Exception', message: 'minX is larger than maxX' });
+		}
+		if (properties.minY > properties.maxY) {
+			throw new Error({ name: 'Terrain Exception', message: 'minY is larger than maxY' });
+		}
+		if (properties.minZ > properties.maxZ) {
+			throw new Error({ name: 'Terrain Exception', message: 'minZ is larger than maxZ' });
+		}
+		if (!heightMatrix) {
+			throw new Error({ name: 'Terrain Exception', message: 'No heightmap data specified' });
+		}
+		if (heightMatrix.length !== heightMatrix[0].length) {
+			throw new Error({ name: 'Terrain Exception', message: 'Heightmap data is not a square' });
+		}
+
+		return true;
+	}
+
+	function registerHeightData(heightMatrix, dimensions, heightMapData) {
+		dimensions = dimensions || _defaults;
+		validateTerrainProperties(dimensions, heightMatrix, heightMapData);
+		var scriptContainer = {
+			dimensions: dimensions,
+			sideQuadCount: heightMatrix.length - 1,
+			script: new HeightMapBoundingScript(heightMatrix)
+		};
+		return scriptContainer;
+	}
+
+	/**
+	 * Creates and exposes a square heightmap terrain fitted within given world dimensions.
+	 * This does not do any visualizing of the heightMap. That needs to be done elsewhere.
+	 */
+	function WorldFittedTerrainScript() {
+		this.heightMapData = [];
+		this.yMargin = 1;
+	}
+
+	/**
+	 * Adds a block of height data from an image at given dimensions and stores the script in an array.
+	 * @param {Array} [heightMatrix] file to load height data from
+	 * @param {Object} [dimensions] dimensions to fit the data within
+	 */
+	WorldFittedTerrainScript.prototype.addHeightData = function (heightMatrix, dimensions) {
+		var scriptContainer = registerHeightData(heightMatrix, dimensions, this.heightMapData);
+		this.heightMapData.push(scriptContainer);
+		return scriptContainer;
+	};
+
+	/**
+	 * Returns the script relevant to a given position
+	 * @param {Vector3} [pos] data, typically use entity transform
+	 * @returns {Object} container object with script and its world dimensions
+	 */
+	WorldFittedTerrainScript.prototype.getHeightDataForPosition = function (pos) {
+		for (var i = 0; i < this.heightMapData.length; i++) {
+			var dim = this.heightMapData[i].dimensions;
+			if (pos.x <= dim.maxX && pos.x >= dim.minX) {
+				if (pos.y < dim.maxY + this.yMargin && pos.y > dim.minY - this.yMargin) {
+					if (pos.z <= dim.maxZ && pos.z >= dim.minZ) {
+						return this.heightMapData[i];
+					}
+				}
+			}
+		}
+		return null;
+	};
+
+	/**
+	 * Adjusts coordinates to from heightMap to fit the dimensions of raw displacement data.
+	 * @param {Number} axPos
+	 * @param {Number} axMin
+	 * @param {Number} axMax
+	 * @param {Number} quadCount
+	 * @returns {Number}
+	 */
+	WorldFittedTerrainScript.prototype.displaceAxisDimensions = function (axPos, axMin, axMax, quadCount) {
+		var matrixPos = axPos - axMin;
+		return quadCount * matrixPos / (axMax - axMin);
+	};
+
+	/**
+	 * Returns coordinates from raw displacement space to fit the dimensions of a registered heightMap.
+	 * @param {Number} axPos
+	 * @param {Number} axMin
+	 * @param {Number} axMax
+	 * @param {Number} quadCount
+	 * @returns {Number}
+	 */
+	WorldFittedTerrainScript.prototype.returnToWorldDimensions = function (axPos, axMin, axMax, quadCount) {
+		var quadSize = (axMax - axMin) / quadCount;
+		var insidePos = axPos * quadSize;
+		return axMin + insidePos;
+	};
+
+	/**
+	 * Looks through height data and returns the elevation of the ground at a given position
+	 * @param {Vector3} pos Position
+	 * @returns {Number} height in units
+	 */
+	WorldFittedTerrainScript.prototype.getTerrainHeightAt = function (pos) {
+		var heightData = this.getHeightDataForPosition(pos);
+		if (heightData === null) {
+			return null;
+		}
+		var dims = heightData.dimensions;
+
+		var tx = this.displaceAxisDimensions(pos.x, dims.minX, dims.maxX, heightData.sideQuadCount);
+		var tz = this.displaceAxisDimensions(pos.z, dims.minZ, dims.maxZ, heightData.sideQuadCount);
+		var matrixHeight = heightData.script.getPreciseHeight(tx, tz);
+		return matrixHeight * (dims.maxY - dims.minY) + dims.minY;
+	};
+
+	/**
+	 * Returns the a normalized terrain normal for the provided position
+	 * @param {Vector3} [pos] the position
+	 * @returns {Vector3} the normal vector
+	 */
+	WorldFittedTerrainScript.prototype.getTerrainNormalAt = function (pos) {
+		var heightData = this.getHeightDataForPosition(pos);
+		if (!heightData) {
+			return null;
+		}
+		var dims = heightData.dimensions;
+
+		var x = this.displaceAxisDimensions(pos.x, dims.minX, dims.maxX, heightData.sideQuadCount);
+		var y = this.displaceAxisDimensions(pos.z, dims.minZ, dims.maxZ, heightData.sideQuadCount);
+		var tri = heightData.script.getTriangleAt(x, y);
+
+		for (var i = 0; i < tri.length; i++) {
+			tri[i].x = this.returnToWorldDimensions(tri[i].x, dims.minX, dims.maxX, heightData.sideQuadCount);
+			tri[i].z = this.returnToWorldDimensions(tri[i].z, dims.minY, dims.maxY, 1);
+			tri[i].y = this.returnToWorldDimensions(tri[i].y, dims.minZ, dims.maxZ, heightData.sideQuadCount);
+		}
+
+		calcVec1.setDirect((tri[1].x - tri[0].x), (tri[1].z - tri[0].z), (tri[1].y - tri[0].y));
+		calcVec2.setDirect((tri[2].x - tri[0].x), (tri[2].z - tri[0].z), (tri[2].y - tri[0].y));
+		calcVec1.cross(calcVec2);
+		if (calcVec1.y < 0) {
+			calcVec1.scale(-1);
+		}
+
+		calcVec1.normalize();
+		return calcVec1;
+	};
+
+	module.exports = WorldFittedTerrainScript;
+
+/***/ }
+
+});
