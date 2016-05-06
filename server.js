@@ -1,5 +1,3 @@
-'use strict';
-
 var WebSocketServer = require('ws').Server;
 var http = require('http');
 var express = require('express');
@@ -8,14 +6,15 @@ var port = process.env.PORT || 5000;
 
 var GameCore = require('./core.js');
 var core = new GameCore();
-console.log('Loaded core');
 
-var staticApp = express();
-staticApp.use(express.static(__dirname + "/public"));
-var staticServer = http.createServer(staticApp);
-var staticPort = 5001;
-staticServer.listen(staticPort);
-console.log('Static server listening on port ' + staticPort);
+app.engine('ejs', require('ejs').renderFile);
+app.set('view engine', 'ejs');
+app.get('/', function (req, res) {
+  res.render('index', {
+	  WSS_URL: 'http://localhost:5000'
+  });
+});
+app.use(express.static(__dirname + '/public'));
 
 var server = http.createServer(app);
 server.listen(port);
@@ -140,9 +139,7 @@ wss.on('connection', function(ws) {
 	sockets[socket_id] = ws;
 	player = core.newPlayer(socket_id);
 
-	console.log('---------------------------------------------------');
 	console.log('New player:', socket_id, player);
-	console.log('---------------------------------------------------');
 
 	ws.onmessage = function(messageString) {
 		var message, data, seq;
@@ -156,9 +153,7 @@ wss.on('connection', function(ws) {
 	});
 
 	ws.on('close', function() {
-		console.log('---------------------------------------------------');
 		console.log('Disconnected:', socket_id, core.players[socket_id].name, socket_id);
-		console.log('---------------------------------------------------');
 		delete sockets[socket_id];
 		core.removePlayer(socket_id);
 		send_to_all('s_player_disconnected', socket_id);
@@ -193,6 +188,4 @@ var send_to_all = function(message, data) {
 	});
 };
 
-
-console.log('Starting game loop');
 game_loop();

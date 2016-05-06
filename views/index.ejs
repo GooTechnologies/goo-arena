@@ -36,18 +36,20 @@
 
 	// Use goo without require. Needed to make pack dependencies in external scripts work.
 	window.goo = {useOwnRequire: true};
+
+	window.gooArenaWebSocketServerHost = '<%=WSS_URL%>';
 	</script>
 
 	<!-- disable native mobile pinch-to-zoom, replacing with the Goo Engine zoom -->
 	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
 
-	
+
 
 	<!-- og -->
-	
+
 	<meta property="og:image" content="res/7c14773824edcdd6cb1e5ae8d412b3d147f87a64.jpg">
-	
-	
+
+
 	<meta property="og:title" content="Copy of Goo Arena"/>
 	<meta property="og:description" content="Made with Goo Create">
 	<meta property="og:updated_time" content="2016-05-06T09:10:11.548753+00:00"/>
@@ -59,32 +61,32 @@
 	<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto">
 	<link rel="stylesheet" type="text/css" href="style/style.css">
 
-	
+
 	<script src="lib/goo.js"></script>
-	
+
 	<script src="lib/cannon/cannon.min.js"></script>
-	
+
 	<script src="lib/fsmpack.js"></script>
-	
+
 	<script src="lib/quadpack.js"></script>
-	
+
 	<script src="lib/timelinepack.js"></script>
-	
+
 	<script src="lib/scriptpack.js"></script>
-	
+
 	<script src="lib/passpack.js"></script>
-	
+
 	<script src="lib/particlepack.js"></script>
-	
+
 	<script src="lib/animationpack.js"></script>
-	
+
 	<script src="lib/physicspack.js"></script>
-	
 
-	
 
-	
-	
+
+
+
+
 </head>
 
 <body class="standard-theme ">
@@ -101,7 +103,7 @@
 				<div id="progress"></div>
 			</div>
 			<h1>Copy of Goo Arena</h1>
-			
+
 		</div>
 	</div>
 
@@ -148,9 +150,9 @@
 		</div>
 	</div>
 
-	
+
 	<div id="fallback" style="background-image: url(res/7c14773824edcdd6cb1e5ae8d412b3d147f87a64.jpg)">
-	
+
 		<h1>WebGL not supported or not enabled</h1>
 	</div>
 

@@ -15,12 +15,6 @@ window.CanvasWrapper = (function() {
 			_canvasInnerWrapper = document.getElementById('canvas-inner');
 			_canvasInnerWrapper.appendChild(_canvas);
 
-			// Put the goo logo inside the inner canvas wrapper.
-			var gooLogo = document.getElementById('goologo');
-			if(gooLogo){
-				_canvasInnerWrapper.appendChild(gooLogo);
-			}
-
 			// Make sure the canvas is updated when the window is resized.
 			window.addEventListener('resize', CanvasWrapper.resize);
 			window.addEventListener('orientationchange', CanvasWrapper.resize);
@@ -59,17 +53,17 @@ window.CanvasWrapper = (function() {
 				var aspectHeight = _config.aspect.height;
 
 				var ratio = aspectWidth / aspectHeight;
-				var windowAspectRatio = window.innerWidth / window.innerHeight;
+				var windowAspectRatio = _canvasOuterWrapper.offsetWidth / _canvasOuterWrapper.offsetHeight;
 
 				var width, height;
 
 				// Top/Bottom letterbox
 				if (ratio > windowAspectRatio) {
-					width = window.innerWidth;
+					width = _canvasOuterWrapper.offsetWidth;
 					height = width / ratio;
 				// Left/Right letterbox
 				} else {
-					height = window.innerHeight;
+					height = _canvasOuterWrapper.offsetHeight;
 					width = height * ratio;
 				}
 
