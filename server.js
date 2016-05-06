@@ -11,7 +11,7 @@ app.engine('ejs', require('ejs').renderFile);
 app.set('view engine', 'ejs');
 app.get('/', function (req, res) {
   res.render('index', {
-	  WSS_URL: process.env.WSS_URL || 'http://localhost:5000'
+	  WSS_URL: process.env.WSS_URL || 'ws://localhost:' + port
   });
 });
 app.use(express.static(__dirname + '/public'));

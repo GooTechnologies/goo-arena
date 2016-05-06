@@ -6,14 +6,23 @@ A WebGL multiplayer FPS game.
 
 ### Server
 
-Requires npm (https://www.npmjs.org/).
+Requires [node.js](https://www.nodejs.org/). Install & run:
 
-Check out this repo, install with 'npm install' and start with 'npm start'.
+```sh
+npm install;
+npm start;
+```
 
-### Client
+By default it will serve the webpage on `http://localhost:5000` and listen for websockets on the same port: `ws://localhost:5000`. To change this, set the `PORT` and `WSS_URL` environment variables:
 
-1. Duplicate [this Goo Create scene](https://create.goocreate.com/edit/823b6c00990643bd8b15eb00f8bcf707.scene) and open it.
-2. Go to the Scripts entity, scroll to the "Connection and Messaging" script in the Script component. Edit the "Hosts" parameter to your host URL. Type "http://localhost:5000".
-3. Export the scene as Webpage: Scene > Export > Webpage.
-4. Serve the webpage locally on any port. Open in any browser.
-5. Play!
+```sh
+# Start web server on port 8888 and listen for websockets on ws://localhost:8888
+PORT=8888 WSS_URL=ws://localhost:8888 npm start
+```
+
+### Development of the client
+
+1. Duplicate [this Goo Create scene](https://create.goocreate.com/edit/e53ee6df73fd4a6eaf98558e4dbb3c9c.scene) and open it.
+2. Export the scene as Webpage: *Scene > Export > Webpage*.
+3. Extract the downloaded `zip` file into `public/`.
+4. Restart the server.
