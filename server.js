@@ -1,5 +1,3 @@
-'use strict';
-
 var WebSocketServer = require('ws').Server;
 var http = require('http');
 var express = require('express');
@@ -8,22 +6,22 @@ var port = process.env.PORT || 5000;
 
 var GameCore = require('./core.js');
 var core = new GameCore();
-console.log('Loaded core');
 
-app.use(express.static(__dirname + "/"));
+app.engine('ejs', require('ejs').renderFile);
+app.set('view engine', 'ejs');
+app.get('/', function (req, res) {
+  res.render('index', {
+	  WSS_URL: process.env.WSS_URL || 'http://localhost:5000'
+  });
+});
+app.use(express.static(__dirname + '/public'));
 
 var server = http.createServer(app);
-
-console.log('                     ');
-console.log('   --------------    ');
-console.log('   Server created    ');
-console.log('   --------------    ');
-console.log('                     ');
-
 server.listen(port);
-console.log('Listening on port', port);
-
-var wss = new WebSocketServer({server: server});
+var wss = new WebSocketServer({
+	server: server
+});
+console.log('WebSocket server listening on port ' + port);
 
 // Stores connections
 // With the same IDs as players
@@ -33,7 +31,7 @@ var sockets = {};
 var recent_ticks = [tick_rate, tick_rate, tick_rate, tick_rate, tick_rate];
 var average_tick_rate = tick_rate;
 
-// Some server state 
+// Some server state
 var socket_id_counter = 0;
 var tick_rate = 50;
 var tick_length = tick_rate;
@@ -52,8 +50,8 @@ var game_loop = function() {
 	core.spawnedPlayers.forEach(function(v) {
 		send_to_all('s_player_spawned', v);
 	});
-	
-	send_to_all('s_players', { 
+
+	send_to_all('s_players', {
 		players: core.players,
 		shots: core.shots,
 		hits: core.hits,
@@ -78,7 +76,7 @@ var game_loop = function() {
 
 	calculate_average_tick_length(tick_length);
 	update_time = new Date().getTime();
-	
+
 	setTimeout(game_loop, tick_rate);
 };
 
@@ -141,9 +139,7 @@ wss.on('connection', function(ws) {
 	sockets[socket_id] = ws;
 	player = core.newPlayer(socket_id);
 
-	console.log('---------------------------------------------------');
 	console.log('New player:', socket_id, player);
-	console.log('---------------------------------------------------');
 
 	ws.onmessage = function(messageString) {
 		var message, data, seq;
@@ -157,9 +153,7 @@ wss.on('connection', function(ws) {
 	});
 
 	ws.on('close', function() {
-		console.log('---------------------------------------------------');
 		console.log('Disconnected:', socket_id, core.players[socket_id].name, socket_id);
-		console.log('---------------------------------------------------');
 		delete sockets[socket_id];
 		core.removePlayer(socket_id);
 		send_to_all('s_player_disconnected', socket_id);
@@ -191,9 +185,7 @@ var send_to_one = function(socket_id, message, data) {
 var send_to_all = function(message, data) {
 	Object.keys(sockets).forEach(function(v) {
 		send_to_one(v, message, data);
-	});	
+	});
 };
 
-
-console.log('Starting game loop');
 game_loop();

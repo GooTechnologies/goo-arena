@@ -1,12 +1,14 @@
 {
-	"name": "goo-arena",
-	"version": "0.0.1",
-	"dependencies": {
-		"ws": "0.4.x",
-		"express": "3.x"
-	},
-	"engines": {
-		"node": "0.10.x",
-		"npm": "1.2.x"
-	}
+  "name": "goo-arena",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/GooTechnologies/goo-arena.git"
+  },
+  "dependencies": {
+    "ejs": "^2.4.1",
+    "express": "^3.21.2",
+    "ws": "^0.4.32"
+  },
+  "license": "MIT"
 }

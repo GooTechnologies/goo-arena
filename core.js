@@ -62,7 +62,7 @@ GameCore.prototype.newPlayer = function(id, name) {
 		health: this.constants.startHealth,
 		color: [
 			this.getRandomArbitrary(0, 1),
-			this.getRandomArbitrary(0, 1), 
+			this.getRandomArbitrary(0, 1),
 			this.getRandomArbitrary(0, 1)
 		]
 	};
@@ -106,7 +106,7 @@ GameCore.prototype.freeSpot = function() {
 		clear = true;
 		position = new Vector3(
 			this.getRandomArbitrary(-this.constants.spawnLimit, this.constants.spawnLimit),
-			0, 
+			0,
 			this.getRandomArbitrary(-this.constants.spawnLimit, this.constants.spawnLimit)
 		);
 		this.occluders.forEach(function(v) {
@@ -114,7 +114,7 @@ GameCore.prototype.freeSpot = function() {
 			if (d.mag() < that.constants.hitRadius + v.radius + 2) {
 				clear = false;
 			}
-		});	
+		});
 	}
 	return position;
 };
@@ -365,7 +365,6 @@ GameCore.prototype.updateBots = function() {
 				// Bots are good shooters. They also shoot from ground level.
 				var aim = Vector3.sub(that.players[targetId].position, that.players[v.id].position);
 				var adjustedPos = that.players[v.id].position.clone();
-				//adjustedPos.y = -that.constants.aimHeight;
 				that.fire(new Date().getTime(), 50, v.id, adjustedPos.toArray(), aim.toArray());
 			}
 
@@ -378,7 +377,7 @@ GameCore.prototype.generateOccluders = function() {
 		var occluder = {
 			radius: this.getRandomArbitrary(this.constants.occluderRadiusMin, this.constants.occluderRadiusMax),
 			position: new Vector3(
-				this.getRandomArbitrary(-this.constants.occluderSpawnLimit, this.constants.occluderSpawnLimit), 
+				this.getRandomArbitrary(-this.constants.occluderSpawnLimit, this.constants.occluderSpawnLimit),
 				-2,
 				this.getRandomArbitrary(-this.constants.occluderSpawnLimit, this.constants.occluderSpawnLimit)
 			)
